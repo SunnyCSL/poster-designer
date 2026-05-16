@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poster Designer — 人機協作系統設計文件</title>
+<style>
+:root {
+  --bg: #0D1117;
+  --bg2: #161B22;
+  --bg3: #21262D;
+  --border: #30363D;
+  --text: #C9D1D9;
+  --text2: #8B949E;
+  --text3: #6E7681;
+  --accent: #58A6FF;
+  --success: #3FB950;
+  --warning: #D29922;
+  --danger: #F85149;
+  --purple: #BC8CFF;
+  --pink: #F778BA;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', sans-serif;
+  line-height: 1.6;
+  padding: 0;
+}
+.container { max-width: 900px; margin: 0 auto; padding: 32px 20px; }
+
+/* Header */
+.hero {
+  background: linear-gradient(135deg, #0D1117 0%, #161B22 50%, #1c2333 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 60px 20px 40px;
+  text-align: center;
+}
+.hero h1 { font-size: 32px; color: #fff; margin-bottom: 8px; }
+.hero .subtitle { font-size: 16px; color: var(--text2); }
+.hero .version { display: inline-block; background: var(--accent); color: #fff; font-size: 12px; padding: 2px 10px; border-radius: 20px; margin-top: 12px; font-weight: 600; }
+.hero .meta { margin-top: 16px; font-size: 13px; color: var(--text3); }
+
+/* Sections */
+section { margin: 40px 0; }
+h2 { 
+  font-size: 22px; color: #fff; 
+  padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+  display: flex; align-items: center; gap: 10px;
+}
+h2 .badge { 
+  font-size: 11px; padding: 2px 8px; border-radius: 10px; 
+  font-weight: 600; background: var(--bg3); color: var(--text2);
+}
+h3 { font-size: 17px; color: var(--accent); margin: 24px 0 12px; }
+h4 { font-size: 14px; color: var(--text); margin: 16px 0 8px; }
+
+/* Cards */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 16px 0;
+}
+.card-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; color: #fff; }
+
+/* Tags */
+.tag {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 11px; font-weight: 600; margin: 2px;
+}
+.tag-blue { background: rgba(88,166,255,0.15); color: var(--accent); }
+.tag-green { background: rgba(63,185,80,0.15); color: var(--success); }
+.tag-orange { background: rgba(210,153,34,0.15); color: var(--warning); }
+.tag-purple { background: rgba(188,140,255,0.15); color: var(--purple); }
+.tag-red { background: rgba(248,81,73,0.15); color: var(--danger); }
+.tag-pink { background: rgba(247,120,186,0.15); color: var(--pink); }
+
+/* Code */
+pre, code {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  font-size: 13px;
+}
+pre {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  overflow-x: auto;
+  margin: 12px 0;
+  line-height: 1.5;
+}
+code {
+  background: var(--bg3);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+pre code { background: none; padding: 0; }
+
+/* Lists */
+ul, ol { padding-left: 20px; margin: 8px 0; }
+li { margin: 4px 0; }
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 13px;
+}
+th, td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+th { background: var(--bg3); color: var(--text2); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+tr:hover td { background: var(--bg3); }
+
+/* Diagrams */
+.diagram-box {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  margin: 16px 0;
+  overflow-x: auto;
+}
+.diagram-box pre { background: none; border: none; padding: 0; margin: 0; }
+.diagram-box pre code { background: none; }
+
+/* Requirements */
+.req { 
+  display: flex; gap: 12px; padding: 12px; 
+  border-left: 3px solid var(--accent);
+  background: var(--bg2);
+  margin: 8px 0;
+  border-radius: 0 6px 6px 0;
+}
+.req-id { 
+  font-size: 11px; font-weight: 700; color: var(--accent);
+  min-width: 70px;
+}
+.req-text { flex: 1; }
+
+/* Callout */
+.callout {
+  padding: 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+  border-left: 4px solid;
+}
+.callout-info { background: rgba(88,166,255,0.1); border-color: var(--accent); }
+.callout-warn { background: rgba(210,153,34,0.1); border-color: var(--warning); }
+.callout-danger { background: rgba(248,81,73,0.1); border-color: var(--danger); }
+.callout-success { background: rgba(63,185,80,0.1); border-color: var(--success); }
+.callout-title { font-weight: 700; margin-bottom: 4px; }
+
+/* Footer */
+.footer {
+  margin-top: 60px;
+  padding: 20px 0;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 13px;
+  color: var(--text3);
+}
+
+/* Mermaid-like diagram text */
+.diagram {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.8;
+  white-space: pre;
+}
+.diagram .arrow { color: var(--accent); }
+.diagram .box { color: var(--success); }
+.diagram .label { color: var(--text2); }
+.diagram .hl { color: var(--pink); font-weight: bold; }
+
+/* Flow steps */
+.flow-step { display: flex; gap: 16px; margin: 12px 0; }
+.flow-num { 
+  min-width: 28px; height: 28px; border-radius: 50%;
+  background: var(--accent); color: #fff; 
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+}
+.flow-content { flex: 1; }
+
+/* Stage cards */
+.stage-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px 0;
+  border-left: 3px solid var(--success);
+}
+.stage-card.stage-1 { border-left-color: var(--accent); }
+.stage-card.stage-2 { border-left-color: var(--success); }
+.stage-card.stage-3 { border-left-color: var(--warning); }
+.stage-card.stage-4 { border-left-color: var(--purple); }
+.stage-card.stage-5 { border-left-color: var(--pink); }
+.stage-card.stage-6 { border-left-color: var(--danger); }
+.stage-header { display: flex; justify-content: space-between; align-items: center; }
+.stage-title { font-size: 15px; font-weight: 600; }
+.stage-test { font-size: 12px; color: var(--text2); margin-top: 4px; }
+
+/* Agent Flow */
+.agent-flow {
+  background: var(--bg3);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 16px 0;
+}
+.agent-step { padding: 8px 0; border-bottom: 1px solid var(--border); }
+.agent-step:last-child { border-bottom: none; }
+.agent-who { font-size: 11px; font-weight: 700; display: inline-block; padding: 1px 6px; border-radius: 3px; margin-right: 8px; }
+.who-human { background: rgba(63,185,80,0.2); color: var(--success); }
+.who-nexi { background: rgba(188,140,255,0.2); color: var(--purple); }
+.who-system { background: rgba(88,166,255,0.2); color: var(--accent); }
+
+@media (max-width: 600px) {
+  .container { padding: 16px 12px; }
+  .hero h1 { font-size: 24px; }
+  h2 { font-size: 18px; }
+  pre { font-size: 12px; padding: 12px; }
+  table, td, th { font-size: 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="hero">
+  <h1>🎨 Poster Designer</h1>
+  <div class="subtitle">人機協作型 Poster Design System — 系統設計文件 v0.2</div>
+  <div class="version">DRAFT v0.2</div>
+  <div class="meta">2026-05-16 · Sunny + Nexi · Poster Designer Project</div>
+</div>
+
+<div class="container">
+
+<!-- ============================== -->
+<!-- PHASE 0: 背景設定 -->
+<!-- ============================== -->
+<section>
+<h2>🏗️ Phase 0: 背景設定 <span class="badge">Current</span></h2>
+
+<div class="card">
+  <div class="card-title">項目定位</div>
+  <p>Poster Designer 唔係一個純粹俾人類用得 poster editor，而係一個 <strong>俾 AI Agent 同人類協作</strong> 嘅 poster creation tool。核心價值在於：</p>
+  <ul>
+    <li>人類可以語音/文字描述需求，Agent 聽得明並且執行</li>
+    <li>人類俾參考圖，Agent vision analyze 拆解成元素</li>
+    <li>Agent 同人類可以 <strong>同時編輯同一張 poster</strong>，即時睇到對方改動</li>
+    <li>Agent 可以逐個 element 獨立製作，最後 compose 成完整 poster</li>
+  </ul>
+</div>
+
+<div class="card">
+  <div class="card-title">現有資源</div>
+  <table>
+    <tr><th>資源</th><th>狀態</th><th>備註</th></tr>
+    <tr><td>GitHub Repo</td><td><span class="tag tag-green">✅ Ready</span></td><td>SunnyCSL/poster-designer，GitHub Pages active</td></tr>
+    <tr><td>GitHub Pages</td><td><span class="tag tag-green">✅ Live</span></td><td>https://sunnycsl.github.io/poster-designer/</td></tr>
+    <tr><td>v0.1.0 Codebase</td><td><span class="tag tag-blue">✅ Done</span></td><td>Fabric.js canvas + PWA + basic UI</td></tr>
+    <tr><td>Google OAuth</td><td><span class="tag tag-green">✅ Ready</span></td><td>13 scopes，Testing mode，localhost OK</td></tr>
+    <tr><td>Nexi TTS + Vision</td><td><span class="tag tag-green">✅ Ready</span></td><td>edge-tts + vision_analyze + mmx vision</td></tr>
+    <tr><td>MiniMax API</td><td><span class="tag tag-green">✅ Ready</span></td><td>image gen, vision, TTS 全部可用</td></tr>
+    <tr><td>Pi 4 RAM</td><td><span class="tag tag-orange">⚠️ 3.7GB</span></td><td>Python backend 要輕量</td></tr>
+  </table>
+</div>
+
+<div class="callout callout-info">
+  <div class="callout-title">💡 設計核心信念</div>
+  <p>呢個工具係 <strong>Agent-native</strong>，其次先係 human-friendly。即係所有操作 Agent 都可以用 CLI/API call 完成，而人類可以透過 PWA 即時睇到 Agent 做緊咩、參與修改、俾 feedback。兩者係平等嘅 co-editor，唔係 AI generation + human review。</p>
+</div>
+</section>
+
+<!-- ============================== -->
+<!-- PHASE 1: 目標設定 -->
+<!-- ============================== -->
+<section>
+<h2>🎯 Phase 1: 目標設定</h2>
+
+<h3>Functional Requirements</h3>
+
+<div class="req"><div class="req-id">FR-01</div><div class="req-text"><strong>語音→設計規格</strong> — 支援語音輸入或文字描述需求，Agent 解析為結構化設計 spec</div></div>
+<div class="req"><div class="req-id">FR-02</div><div class="req-text"><strong>參考圖→拆解</strong> — Agent 可 vision analyze 參考圖，識別文字區塊、圖片位置、顏色、layout 結構，輸出 element list</div></div>
+<div class="req"><div class="req-id">FR-03</div><div class="req-text"><strong>逐元素製作</strong> — Agent 可以逐個 element（text / image / shape）獨立建立、定位、設定樣式</div></div>
+<div class="req"><div class="req-id">FR-04</div><div class="req-text"><strong>元素匯合</strong> — 將所有獨立 elements compose 成一個完整 poster，處理 layer order、對齊、佈局</div></div>
+<div class="req"><div class="req-id">FR-05</div><div class="req-text"><strong>人機同步</strong> — Agent 同人類可同時編輯同一 shared state，改動即時推送俾對方</div></div>
+<div class="req"><div class="req-id">FR-06</div><div class="req-text"><strong>Agent CLI</strong> — Nexi 可以用 terminal command 操作所有功能（add-text, add-image, compose, export）</div></div>
+<div class="req"><div class="req-id">FR-07</div><div class="req-text"><strong>Human PWA</strong> — 人類喺 iPhone/Mac 上有 Fabric.js 界面，可以 drag/resize/edit elements</div></div>
+<div class="req"><div class="req-id">FR-08</div><div class="req-text"><strong>Export</strong> — 匯出 PNG / PDF（/ 未來 Google Slides）</div></div>
+<div class="req"><div class="req-id">FR-09</div><div class="req-text"><strong>版本管理</strong> — 每次改動有 history，可以 undo/redo，可以睇到邊個改咗</div></div>
+<div class="req"><div class="req-id">FR-10</div><div class="req-text"><strong>Template 系統</strong> — 支援 A3/A4/Square/Mobile 等 preset template sizes</div></div>
+
+<h3>Non-Functional Requirements</h3>
+<div class="req"><div class="req-id">NFR-01</div><div class="req-text"><strong>同步延遲 < 1s</strong> — Agent 或人類做改動後，對方要喺 1 秒內見到</div></div>
+<div class="req"><div class="req-id">NFR-02</div><div class="req-text"><strong>Agent-native</strong> — 所有操作必須有 API/CLI 接口，唔可以只有 GUI</div></div>
+<div class="req"><div class="req-id">NFR-03</div><div class="req-text"><strong>Mobile-first</strong> — PWA 界面以 iPhone 為 primary target，Desktop secondary</div></div>
+<div class="req"><div class="req-id">NFR-04</div><div class="req-text"><strong>輕量</strong> — Python backend 要 fit 喺 Pi 4 3.7GB RAM 入面行</div></div>
+<div class="req"><div class="req-id">NFR-05</div><div class="req-text"><strong>每個 Stage 獨立可測</strong> — 每個 milestone 推上 GitHub Pages 就有 URL 可以 real device 測試</div></div>
+
+<h3>Success Criteria</h3>
+<div class="card">
+  <ul>
+    <li>✅ Sunny 可以講一句「幫我整個藍色背景 + 白色大字嘅 poster」，Nexi 就自動起好 layout</li>
+    <li>✅ Sunny 俾張 reference poster，Nexi analyze 完還原 80% 相似度</li>
+    <li>✅ Sunny 喺 iPhone 拖一個 element，Nexi 喺 Discord/Telegram 見到改動</li>
+    <li>✅ Nexi 加咗個背景，Sunny 喺 PWA 即時見到</li>
+    <li>✅ 成個流程行到：語音 → vision → 逐元素砌 → compose → export</li>
+  </ul>
+</div>
+</section>
+
+<!-- ============================== -->
+<!-- PHASE 2: 系統設計 -->
+<!-- ============================== -->
+<section>
+<h2>🏛️ Phase 2: 系統設計</h2>
+
+<h3>2.1 總體架構</h3>
+
+<div class="diagram-box">
+<pre class="diagram">
+┌────────────────────────┐     ┌──────────────────────────┐
+│  <span class="box">Sunny (iPhone/Mac)</span>    │     │  <span class="hl">Nexi (Hermes Agent)</span>    │
+│  Fabric.js Canvas PWA   │     │                          │
+│                         │     │  poster add-text ...     │
+│  Drag / Resize / Edit   │     │  poster add-image ...    │
+│  SSE: 收到 Agent 改動   │     │  poster set-bg ...       │
+│  POST: 人類改動 → Server │     │  poster compose/export   │
+└──────────┬─────────────┘     └──────────┬───────────────┘
+           │                              │
+           │    <span class="arrow">HTTP REST + SSE</span>           │
+           │                              │
+           └──────────┬──────────────────┘
+                      │
+           ┌──────────▼──────────────────┐
+           │  <span class="label">Python Backend (FastAPI)</span>     │
+           │                              │
+           │  POST /api/element/*         │
+           │  GET  /api/state             │
+           │  GET  /api/events (SSE)      │
+           │  POST /api/compose           │
+           │  POST /api/export            │
+           │  GET  /api/history           │
+           │                              │
+           │  ┌──────────────────────┐   │
+           │  │  Shared JSON State   │   │
+           │  │  state.json (disk)   │   │
+           │  └──────────────────────┘   │
+           │                              │
+           │  ┌──────────────────────┐   │
+           │  │  SSE Connections     │   │
+           │  │  Manager (in-memory) │   │
+           │  └──────────────────────┘   │
+           │                              │
+           │  ┌──────────────────────┐   │
+           │  │  Image Hosting       │   │
+           │  │  (local ./uploads/)  │   │
+           │  └──────────────────────┘   │
+           └──────────────────────────────┘
+                      │
+           ┌──────────▼──────────────────┐
+           │  <span class="label">Output</span>                       │
+           │                              │
+           │  poster.png (PIL render)     │
+           │  poster.pdf (fpdf2 render)   │
+           │  Google Slides (future)      │
+           └──────────────────────────────┘
+</pre>
+</div>
+
+<table>
+  <tr><th>Component</th><th>Tech</th><th>用途</th></tr>
+  <tr><td>Backend Server</td><td><span class="tag tag-blue">FastAPI + uvicorn</span></td><td>REST API + SSE push，Pi 4 上 run</td></tr>
+  <tr><td>Shared State</td><td><span class="tag tag-blue">JSON file</span></td><td>state.json — 所有 elements + metadata，Agent & PWA 共用</td></tr>
+  <tr><td>Human PWA</td><td><span class="tag tag-purple">Fabric.js + PWA</span></td><td>Canvas editor on iPhone/Mac，SSE listener</td></tr>
+  <tr><td>Agent CLI</td><td><span class="tag tag-pink">Python CLI</span></td><td>Nexi 用 terminal command 操控 state.json</td></tr>
+  <tr><td>Compose Engine</td><td><span class="tag tag-pink">PIL/Pillow</span></td><td>Element list → rasterize → export PNG</td></tr>
+  <tr><td>Vision Pipeline</td><td><span class="tag tag-green">Nexi vision tools</span></td><td>Reference image → element decomposition</td></tr>
+  <tr><td>Speech Pipeline</td><td><span class="tag tag-green">edge-tts + NLU</span></td><td>語音 → text → structured design spec</td></tr>
+</table>
+
+<h3>2.2 Shared Data Model (state.json)</h3>
+
+<p>呢個係整個系統嘅核心——Agent 同 PWA 共用嘅 state。</p>
+
+<pre><code>{
+  "version": 2,
+  "edited_by": null,       // "nexi" | "sunny" | null
+  "last_updated": "ISO8601",
+
+  "meta": {
+    "template": "A4",
+    "width_mm": 297,
+    "height_mm": 210,
+    "dpi": 300,
+    "width_px": 3508,      // calculated
+    "height_px": 2480
+  },
+
+  "background": {
+    "type": "solid",        // "solid" | "gradient" | "image"
+    "color": "#ffffff",
+    "gradient": null,
+    "image": null
+  },
+
+  "elements": [
+    {
+      "id": "el_001",
+      "type": "text",       // "text" | "image" | "shape"
+      "content": "Grand Opening",
+      "style": {
+        "fontFamily": "Noto Sans TC",
+        "fontSize": 48,
+        "fontWeight": "bold",
+        "color": "#000000",
+        "textAlign": "center",
+        "lineHeight": 1.2,
+        "letterSpacing": 0
+      },
+      "position": {
+        "x": 148.5, "y": 50,     // mm coordinates
+        "width": 200, "height": 60,
+        "rotation": 0
+      },
+      "layer": 3,
+      "locked": false,
+      "visible": true,
+      "group": null
+    }
+  ],
+
+  "history": [
+    {
+      "timestamp": "ISO8601",
+      "agent": "nexi",        // "nexi" | "sunny"
+      "action": "add_text",
+      "element_id": "el_001",
+      "snapshot": null        // full state snapshot (for undo)
+    }
+  ]
+}</code></pre>
+
+<div class="callout callout-info">
+  <div class="callout-title">📐 座標系統</div>
+  <p>所有 position 用 <strong>mm</strong> 做單位，唔係 pixels。PWA 顯示時根據 device pixel ratio 縮放，compose export 時根據 DPI 轉 pixel。咁樣 Agent 同 PWA 唔會因為 screen size 唔同而讀錯位置。</p>
+</div>
+
+<h3>2.3 REST API Spec</h3>
+
+<table>
+  <tr><th>Endpoint</th><th>Method</th><th>用途</th><th>Agent CLI</th></tr>
+  <tr><td>/api/state</td><td>GET</td><td>拎完整 state.json</td><td>poster state</td></tr>
+  <tr><td>/api/state</td><td>POST</td><td>全量更新 state</td><td>poster load &lt;file&gt;</td></tr>
+  <tr><td>/api/element</td><td>POST</td><td>新增 element</td><td>poster add-text / add-image / add-shape</td></tr>
+  <tr><td>/api/element/{id}</td><td>PATCH</td><td>修改 element 屬性</td><td>poster update &lt;id&gt; --prop val</td></tr>
+  <tr><td>/api/element/{id}</td><td>DELETE</td><td>刪除 element</td><td>poster remove &lt;id&gt;</td></tr>
+  <tr><td>/api/batch</td><td>POST</td><td>批量操作（add/update/delete）</td><td>poster batch &lt;file&gt;</td></tr>
+  <tr><td>/api/compose</td><td>POST</td><td>渲染完整 poster</td><td>poster compose</td></tr>
+  <tr><td>/api/export</td><td>POST</td><td>匯出 PNG/PDF</td><td>poster export --format png</td></tr>
+  <tr><td>/api/undo</td><td>POST</td><td>復原上一步</td><td>poster undo</td></tr>
+  <tr><td>/api/events</td><td>GET (SSE)</td><td>即時事件推送</td><td>—（PWA 用）</td></tr>
+  <tr><td>/api/history</td><td>GET</td><td>操作歷史</td><td>poster history</td></tr>
+  <tr><td>/api/upload</td><td>POST</td><td>上傳圖片</td><td>poster upload &lt;file&gt;</td></tr>
+</table>
+
+<h3>2.4 SSE 即時同步機制</h3>
+
+<p>關鍵設計——點樣做到人機即時同步：</p>
+
+<div class="diagram-box">
+<pre class="diagram">
+<span class="hl">Nexi</span> runs: <span class="box">poster add-text "Hello" --x 100 --y 50</span>
+       │
+       ▼
+<span class="label">poster CLI</span> → POST /api/element → Server updates state.json
+                                                │
+                                                ▼
+                                     Server pushes SSE event:
+                                     <span class="arrow">{"type": "element_added", "id": "el_002"}</span>
+                                                │
+                     ┌──────────────────────────┘
+                     ▼
+              <span class="box">Sunny's PWA</span> receives SSE
+              → GET /api/state (fetch latest)
+              → Fabric.js canvas re-renders
+              → Sunny sees "Nexi added a text element"
+
+<span class="hl">Sunny</span> drags a text box on PWA
+       │
+       ▼
+<span class="label">PWA</span> → PATCH /api/element/el_002 { "x": 120, "y": 60 }
+       → Server updates state.json
+       → Server pushes SSE: {"type": "element_updated", "id": "el_002"}
+                                                │
+                     ┌──────────────────────────┘
+                     ▼
+              <span class="box">Nexi</span> doesn't use SSE directly
+              → Nexi reads state.json when it needs to know current state
+              → Or server can notify via webhook/callback
+</pre>
+</div>
+
+<table>
+  <tr><th>SSE Event</th><th>Payload</th><th>Occurs When</th></tr>
+  <tr><td>element_added</td><td>{"id": "el_003", "type": "text"}</td><td>Nexi/Sunny add element</td></tr>
+  <tr><td>element_updated</td><td>{"id": "el_003", "props": ["x","y"]}</td><td>Position/style change</td></tr>
+  <tr><td>element_deleted</td><td>{"id": "el_003"}</td><td>Element removed</td></tr>
+  <tr><td>state_replaced</td><td>{"version": 3}</td><td>Bulk update / new design</td></tr>
+  <tr><td>compose_complete</td><td>{"url": "..."}</td><td>Compose finished</td></tr>
+  <tr><td>agent_editing</td><td>{"agent": "nexi", "action": "..."}</td><td>Nexi currently editing</td></tr>
+</table>
+
+<h3>2.5 Agent CLI Spec</h3>
+
+<p>呢層係 Nexi 嘅主要接口——所有操作透過 terminal command 完成：</p>
+
+<pre><code>poster new [template]        # 新 design (A4/A3/Square/Mobile...)
+poster state                  # 顯示當前 state 摘要
+poster add-text "內容" --x --y [--font-size 48] [--bold] [--color "#fff"]
+poster add-image &lt;path&gt; --x --y [--width 100] [--height 100]
+poster add-shape &lt;rect|circle&gt; --x --y --width --height [--bg "#eee"]
+poster update &lt;id&gt; --prop value     # 修改 element
+poster remove &lt;id&gt;                 # 刪除 element
+poster set-bg --color "#1a1a2e"    # 改背景
+poster layer &lt;id&gt; --to 0           # 改 layer 順序
+poster batch &lt;file.json&gt;          # 批量操作
+poster compose                     # 渲染成 poster.png
+poster export --format png|pdf     # 匯出
+poster undo                        # 復原
+poster history                     # 睇操作記錄
+poster load &lt;file.json&gt;           # 載入 state
+poster save &lt;file.json&gt;           # 儲存 state
+poster upload &lt;image-path&gt;        # 上傳圖片到 server
+poster preview                     # 生成 HTML preview（可唔開 server）
+poster help                        # 全部 command</code></pre>
+
+<h3>2.6 Agent Workflow — 完整協作場景</h3>
+
+<div class="agent-flow">
+<div class="agent-step"><span class="agent-who who-human">Sunny</span> 「Nexi，幫我整一個 Grand Opening 嘅 poster，參考呢張圖」 [send reference.jpg]</div>
+<div class="agent-step" style="padding-left: 40px; color: var(--text3); font-size: 13px;">└── Nexi 收到語音 + reference.jpg</div>
+
+<div class="agent-step"><span class="agent-who who-nexi">Nexi</span> ① Vision Analyze reference.jpg → 分析 layout、文字區塊、顏色、圖片位置</div>
+<div class="agent-step" style="padding-left: 40px; color: var(--text3); font-size: 13px;">└── 輸出: structured element list (3 text blocks, 1 image, 1 shape bg)</div>
+
+<div class="agent-step"><span class="agent-who who-nexi">Nexi</span> ② poster new A4 — 起新 design</div>
+<div class="agent-step" style="padding-left: 40px; color: var(--text3); font-size: 13px;">└── Server 建立 state.json | SSE → PWA</div>
+
+<div class="agent-step"><span class="agent-who who-nexi">Nexi</span> ③ poster set-bg --color "#0a1628"</div>
+<div class="agent-step" style="padding-left: 40px; color: var(--text3); font-size: 13px;">└── 背景變深藍 | SSE → PWA → <span class="tag tag-green">Sunny 見到背景變咗</span></div>
+
+<div class="agent-step"><span class="agent-who who-nexi">Nexi</span> ④ poster add-text "GRAND OPENING" --x 148 --y 60 --font-size 52 --bold --color "#ffd700" --align center</div>
+<div class="agent-step" style="padding-left: 40px; color: var(--text3); font-size: 13px;">└── 主標題出現 | SSE → PWA</div>
+
+<div class="agent-step"><span class="agent-who who-human">Sunny</span> （喺 iPhone 上見到標題）「個標題細咗啲，推上啲」→ 喺 PWA drag 個標題向上移</div>
+<div class="agent-step" style="padding-left: 40px; color: var(--text3); font-size: 13px;">└── PATCH /api/element/el_001 {y: 40} | SSE → Nexi 下次讀到</div>
+
+<div class="agent-step"><span class="agent-who who-nexi">Nexi</span> ⑤ poster add-text "Join us for the celebration" --x 148 --y 120 --font-size 24 --color "#ffffff"</div>
+<div class="agent-step" style="padding-left: 40px; color: var(--text3); font-size: 13px;">└── Subtitle 出現 — Nexi 見到 Sunny 改咗標題位置，自動調整 subtitle Y</div>
+
+<div class="agent-step"><span class="agent-who who-human">Sunny</span> （見到 subtitle 自動加咗）「好，幫我加個日期同 logo」</div>
+
+<div class="agent-step"><span class="agent-who who-nexi">Nexi</span> ⑥ poster add-text "2026.06.01" --x 148 --y 160 --font-size 20 --color "#ffd700"
+poster upload logo.png → poster add-image "uploads/logo.png" --x 40 --y 180 --width 60</div>
+<div class="agent-step" style="padding-left: 40px; color: var(--text3); font-size: 13px;">└── 日期 + logo 出現 | SSE → PWA</div>
+
+<div class="agent-step"><span class="agent-who who-human">Sunny</span> （喺 PWA 微調位置）→ drag logo 向右少少</div>
+
+<div class="agent-step"><span class="agent-who who-nexi">Nexi</span> ⑦ poster compose → poster export --format png</div>
+<div class="agent-step" style="padding-left: 40px; color: var(--text3); font-size: 13px;">└── Render 完整 poster.png | SSE notify Sunny</div>
+
+<div class="agent-step"><span class="agent-who who-nexi">Nexi</span> ⑧ Deliver poster.png to Sunny</div>
+</div>
+
+<h3>2.7 Vision → Element Decomposition Pipeline</h3>
+
+<p>呢個係最關鍵嘅 AI 能力——將一張參考圖拆解成可製作的 element list：</p>
+
+<pre><code>Input: reference.jpg
+
+Step 1 — Vision Analyze (mmx vision / vision_analyze)
+  → Detect: text regions, image regions, shapes, color palette
+  → Output: structured description
+
+Step 2 — NL → Element List (DeepSeek reasoning)
+  → Convert description to structured element array
+  → Each element: type, content, approximate position, style
+  → Output: JSON element list
+
+Step 3 — Agent Execution
+  → Loop through element list → call poster add-* for each
+  → Position elements based on reference analysis
+  → Set colors, fonts, sizes matching reference
+
+Step 4 — Compose + Present
+  → poster compose → show result to Sunny
+  → Sunny can tweak any element in PWA</code></pre>
+
+<div class="callout callout-success">
+  <div class="callout-title">✅ 拆解 vs 生成</div>
+  <p>關鍵區別：唔係叫 AI「生成一張 poster」，而係 AI「分析參考圖 → 拆成獨立元素 → 逐個製作 → 匯合」。呢個 approach 嘅好處係人類可以喺任何一步介入修改，唔係 black box generation。</p>
+</div>
+
+<h3>2.8 Speech → Design Spec Pipeline</h3>
+
+<pre><code>Sunny 語音: 「幫我整張藍色背景嘅 poster，
+           左上角有 logo，中間大大隻字寫住 Grand Opening，
+           下面有日期同地點」
+
+Step 1 — speech-to-text (edge-tts / whisper)
+  → "幫我整張藍色背景嘅 poster，左上角有 logo..."
+
+Step 2 — NL → Structured Spec (DeepSeek reasoning)
+  → {
+      background: { type: "solid", color: "blue" },
+      elements: [
+        { type: "image", position: "top-left", description: "logo" },
+        { type: "text", content: "Grand Opening", position: "center", style: "large" },
+        { type: "text", content: "[date] [location]", position: "bottom-center" }
+      ]
+    }
+
+Step 3 — Agent Execution
+  → poster set-bg --color "#1a3a6b"
+  → poster add-text "Grand Opening" --x 148 --y 80 --font-size 48 --bold ...
+  → poster add-text "2026.06.01 | Central" --x 148 --y 160 ...
+
+Step 4 — Compose + Present
+  → poster compose → Sunny 見到成品</code></pre>
+
+</section>
+
+<!-- ============================== -->
+<!-- PHASE 3: Stage 計劃 -->
+<!-- ============================== -->
+<section>
+<h2>📋 Phase 3: Stage 實施計劃</h2>
+
+<p>每個 Stage 獨立可測，commit → push → GitHub Pages auto-deploy → Sunny 有 URL 測試。</p>
+
+<!-- Stage 1 -->
+<div class="stage-card stage-1">
+  <div class="stage-header">
+    <div class="stage-title">Stage 1 — Python Backend + Shared State</div>
+    <div><span class="tag tag-blue">Foundation</span></div>
+  </div>
+  <div class="stage-test">📦 FastAPI server + state.json CRUD + SSE</div>
+  <p style="margin-top:8px; font-size:13px; color:var(--text2);">
+    deploy server on Pi → curl test all endpoints → PWA 可以讀 state
+  </p>
+  <div style="margin-top:8px; font-size:12px; color:var(--text3);">
+    測法：<code>curl http://pi-ip:8000/api/state</code> · SSE test via <code>curl -N</code>
+  </div>
+</div>
+
+<!-- Stage 2 -->
+<div class="stage-card stage-2">
+  <div class="stage-header">
+    <div class="stage-title">Stage 2 — Agent CLI (poster command)</div>
+    <div><span class="tag tag-green">Agent Tool</span></div>
+  </div>
+  <div class="stage-test">📦 poster add-text / add-image / state / undo</div>
+  <p style="margin-top:8px; font-size:13px; color:var(--text2);">
+    Python CLI package → pip install -e . → Nexi 可以 terminal call
+  </p>
+  <div style="margin-top:8px; font-size:12px; color:var(--text3);">
+    測法：<code>poster add-text "Test" --x 50 --y 50</code> → check state.json
+  </div>
+</div>
+
+<!-- Stage 3 -->
+<div class="stage-card stage-3">
+  <div class="stage-header">
+    <div class="stage-title">Stage 3 — PWA v0.2 Connected to Server</div>
+    <div><span class="tag tag-orange">Human UI</span></div>
+  </div>
+  <div class="stage-test">📦 Fabric.js canvas → 讀 state.json · SSE listener · 拖曳修改 → POST back</div>
+  <p style="margin-top:8px; font-size:13px; color:var(--text2);">
+    改 v0.1.0 index.html 做 mobile-first Canva-style UI + backend connection
+  </p>
+  <div style="margin-top:8px; font-size:12px; color:var(--text3);">
+    測法：GitHub Pages URL + iPhone 打開 → 見到 canvas + 試 drag element
+  </div>
+</div>
+
+<!-- Stage 4 -->
+<div class="stage-card stage-4">
+  <div class="stage-header">
+    <div class="stage-title">Stage 4 — Compose + Export Engine</div>
+    <div><span class="tag tag-purple">Output</span></div>
+  </div>
+  <div class="stage-test">📦 PIL/Pillow render state → poster.png + PDF</div>
+  <p style="margin-top:8px; font-size:13px; color:var(--text2);">
+    Read state.json → render each element → compose → export
+  </p>
+  <div style="margin-top:8px; font-size:12px; color:var(--text3);">
+    測法：<code>poster compose && poster export --format png</code>
+  </div>
+</div>
+
+<!-- Stage 5 -->
+<div class="stage-card stage-5">
+  <div class="stage-header">
+    <div class="stage-title">Stage 5 — Vision → Element Decomposition</div>
+    <div><span class="tag tag-pink">AI Pipeline</span></div>
+  </div>
+  <div class="stage-test">📦 Nexi script: reference.jpg → vision analyze → element list → poster batch</div>
+  <p style="margin-top:8px; font-size:13px; color:var(--text2);">
+    One-shot pipeline: 俾 reference → 出 poster
+  </p>
+  <div style="margin-top:8px; font-size:12px; color:var(--text3);">
+    測法：俾 reference.jpg → pipeline run → 出 poster.png + Sunny 喺 PWA 改
+  </div>
+</div>
+
+<!-- Stage 6 -->
+<div class="stage-card stage-6">
+  <div class="stage-header">
+    <div class="stage-title">Stage 6 — Speech → Full Workflow</div>
+    <div><span class="tag tag-red">Complete</span></div>
+  </div>
+  <div class="stage-test">📦 語音 input → NL spec → vision (optional) → element creation → compose → export + PWA live</div>
+  <p style="margin-top:8px; font-size:13px; color:var(--text2);">
+    完整人機協作 loop: 你講嘢 → Nexi 做 → 你喺 PWA 睇到 + 改 → Nexi 睇到你改 → 再調整
+  </p>
+  <div style="margin-top:8px; font-size:12px; color:var(--text3);">
+    測法：語音「整張 poster」→ 睇 PWA 即時更新 → 修改 → export
+  </div>
+</div>
+
+</section>
+
+<!-- ============================== -->
+<!-- PHASE 4: 風險管理 -->
+<!-- ============================== -->
+<section>
+<h2>⚠️ Phase 4: 風險管理</h2>
+
+<table>
+  <tr><th>風險</th><th>嚴重性</th><th>可能性</th><th>緩解</th></tr>
+  <tr>
+    <td>Pi 4 RAM 不足以同時 run FastAPI + PWA + Hermes Gateway</td>
+    <td><span class="tag tag-red">高</span></td>
+    <td><span class="tag tag-orange">中</span></td>
+    <td>FastAPI 用 uvicorn 單 worker + asyncio；圖片唔 save 喺 memory；state.json 用 file-based 唔用 DB</td>
+  </tr>
+  <tr>
+    <td>SSE 連接斷開（PWA 休眠 / network change）</td>
+    <td><span class="tag tag-orange">中</span></td>
+    <td><span class="tag tag-orange">中</span></td>
+    <td>EventSource auto-reconnect；PWA on reconnect 全量 fetch state</td>
+  </tr>
+  <tr>
+    <td>Human 同 Agent 同時改同一個 element</td>
+    <td><span class="tag tag-orange">中</span></td>
+    <td><span class="tag tag-green">低</span></td>
+    <td>Optimistic locking — version check on PATCH；last-write-wins 但 history 有 record</td>
+  </tr>
+  <tr>
+    <td>Vision analysis 唔夠準確</td>
+    <td><span class="tag tag-orange">中</span></td>
+    <td><span class="tag tag-orange">中</span></td>
+    <td>Stage 5 有 human-in-loop review；Sunny 可以喺 PWA 修正任何 element</td>
+  </tr>
+  <tr>
+    <td>GitHub Pages 只 serve static files，唔可以 serve API</td>
+    <td><span class="tag tag-green">低</span></td>
+    <td><span class="tag tag-green">低</span></td>
+    <td>PWA 行喺 GitHub Pages；API server 行喺 Pi (Tailscale)；PWA 經 Tailscale IP 連 API</td>
+  </tr>
+  <tr>
+    <td>iPhone Safari 背景 tab 暫停 SSE</td>
+    <td><span class="tag tag-orange">中</span></td>
+    <td><span class="tag tag-red">高</span></td>
+    <td>Page Visibility API detect → reconnect；PWA service worker 可 keep alive</td>
+  </tr>
+  <tr>
+    <td>Compose Engine 唔支援中文字體</td>
+    <td><span class="tag tag-orange">中</span></td>
+    <td><span class="tag tag-green">低</span></td>
+    <td>用 fpdf2 + Noto Sans CJK；已有 pdf-report-generation skills 解決過</td>
+  </tr>
+</table>
+</section>
+
+<!-- ============================== -->
+<!-- 附錄 -->
+<!-- ============================== -->
+<section>
+<h2>📎 附錄</h2>
+
+<h3>A. 目錄結構</h3>
+<pre><code>poster-designer/
+├── server/
+│   ├── main.py              # FastAPI 入口
+│   ├── state.py              # state.json CRUD
+│   ├── sse.py                # SSE manager
+│   ├── compose.py            # Compose engine (PIL)
+│   └── uploads/              # Uploaded images
+├── cli/
+│   ├── poster                # CLI entry point (shell script)
+│   └── commands.py           # CLI implementation
+├── pwa/
+│   ├── index.html            # Fabric.js canvas PWA (mobile-first)
+│   ├── manifest.json         # PWA manifest
+│   ├── sw.js                 # Service worker
+│   └── js/
+│       ├── canvas.js         # Fabric.js init + controls
+│       ├── sse-client.js     # SSE listener + state sync
+│       └── ui.js             # Mobile-first UI components
+├── docs/
+│   └── system-design-v0.2.html
+├── CHANGELOG.md
+├── README.md
+└── .gitignore</code></pre>
+
+<h3>B. 設計決策記錄</h3>
+<table>
+  <tr><th>決策</th><th>選擇</th><th>原因</th></tr>
+  <tr><td>Backend framework</td><td>FastAPI (Flask alternative)</td><td>Native async support for SSE, lightweight, auto docs</td></tr>
+  <tr><td>State format</td><td>JSON file (not database)</td><td>Agent 可以直接 read/write，debug 方便，Pi 上輕量</td></tr>
+  <tr><td>Real-time sync</td><td>SSE (not WebSocket)</td><td>PWA 有 EventSource 原生支援，唔使額外 library；SSE 夠用（單向推送）</td></tr>
+  <tr><td>Coordinate system</td><td>mm (not pixels)</td><td>Screen-independent，PWA 同 Export Engine 用同一套數字</td></tr>
+  <tr><td>CLI vs API</td><td>CLI wraps API</td><td>Nexi 用 terminal 最自然，CLI 背後 call REST API 俾 PWA 都用</td></tr>
+  <tr><td>Compose engine</td><td>PIL/Pillow</td><td>Already in venv，可以做文字繪製 + 圖層合成</td></tr>
+  <tr><td>Export format</td><td>PNG first, PDF second</td><td>PNG 最快見到結果，PDF 用已有嘅 fpdf2 pattern</td></tr>
+</table>
+
+<h3>C. Nexi 指令範例（完整使用場景）</h3>
+<pre><code># Sunny 俾 reference + 語音指示
+# Nexi 自動做晒以下嘢：
+
+# 1. Vision analyze
+vision_analyze("reference.jpg") → structured description
+
+# 2. Convert to element list
+... reasoning ... → JSON element array
+
+# 3. Create design
+poster new A4 --bg "#0a1628"
+
+# 4. Add elements (逐個)
+poster add-text "GRAND OPENING" --x 148 --y 60 --font-size 52 --bold --color "#ffd700" --align center
+poster add-text "Join us" --x 148 --y 120 --font-size 24 --color "#fff" --align center
+poster add-image "uploads/logo.png" --x 40 --y 180 --width 80 --height 40
+
+# 5. Sunny modifies in PWA (no Nexi command needed)
+# Sunny drags title up → PATCH /api/element/el_001
+# Nexi notices change → adjusts subtitle position
+
+# 6. Compose + export
+poster compose
+poster export --format png
+
+# 7. Deliver to Sunny
+[Send poster.png via Discord/Telegram]</code></pre>
+</section>
+
+<!-- Footer -->
+<div class="footer">
+  Poster Designer — 人機協作系統設計文件 v0.2 · 2026-05-16 · 下一個步：Stage 1 實施
+</div>
+
+</div>
+
+</body>
+</html>
