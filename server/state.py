@@ -292,18 +292,18 @@ class State:
     def undo(self, agent: str = "system") -> dict:
         """
         Restore to previous snapshot. Returns restored state or current if no history.
+        After undo, history shrinks by one entry (the action being undone).
         """
         hist = self._data.get("history", [])
         if len(hist) < 2:
             return copy.deepcopy(self._data)
-        # snapshot current (undo point) then pop it
-        undo_snapshot = copy.deepcopy(self._data)
-        self._data["history"].pop()
-        # restore from previous snapshot
-        prev = hist[-1]["snapshot"]          # snapshot BEFORE the action being undone
-        self._data = copy.deepcopy(prev)
-        # push undo snapshot (post-restore state) for potential redo
-        self._push_history(agent, "undo")
+        # Get the state from the entry BEFORE the last one
+        prev_state = copy.deepcopy(hist[-2]["snapshot"])
+        # Restore full state but keep the history chain minus the last entry
+        # This allows chained undo calls
+        prev_state["history"] = hist[:-1]
+        self._data = prev_state
+        self._data["last_updated"] = datetime.now(timezone.utc).isoformat()
         self.save()
         return copy.deepcopy(self._data)
 

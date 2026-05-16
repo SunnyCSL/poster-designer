@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0D1117">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Poster Designer</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+  <link href="https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.css" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0D1117;
+      --surface: #161B22;
+      --surface2: #21262D;
+      --border: #30363D;
+      --text: #E6EDF3;
+      --text-dim: #8B949E;
+      --accent: #58A6FF;
+      --danger: #F85149;
+      --top-h: 44px;
+      --bottom-h: 56px;
+      --ctx-h: 44px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    /* ── Layout ── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      height: 100dvh;
+    }
+
+    /* ── Top bar ── */
+    #top-bar {
+      height: var(--top-h);
+      padding-top: var(--safe-top);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    #top-bar .title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 18px;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .icon-btn:active { background: var(--surface2); }
+    .icon-btn:disabled { opacity: 0.4; pointer-events: none; }
+    .top-left, .top-right { display: flex; align-items: center; }
+
+    /* ── Canvas area ── */
+    #canvas-wrap {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      background: var(--bg);
+      touch-action: none;
+    }
+    #poster-canvas {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform-origin: center center;
+      touch-action: none;
+    }
+
+    /* ── Contextual toolbar ── */
+    #ctx-bar {
+      height: var(--ctx-h);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 12px;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    #ctx-bar.visible { display: flex; }
+    .ctx-label {
+      font-size: 12px;
+      color: var(--text-dim);
+      min-width: 40px;
+    }
+    .ctx-slider {
+      -webkit-appearance: none;
+      width: 120px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      outline: none;
+    }
+    .ctx-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+    .ctx-color {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      padding: 0;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .ctx-color input { opacity: 0; width: 200%; height: 200%; margin: -50%; cursor: pointer; }
+
+    /* ── Bottom toolbar ── */
+    #bottom-bar {
+      height: calc(var(--bottom-h) + var(--safe-bottom));
+      padding-bottom: var(--safe-bottom);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .tool-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      min-width: 52px;
+      height: 52px;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 20px;
+      cursor: pointer;
+      border-radius: 10px;
+      transition: background 0.15s;
+      padding: 0 4px;
+    }
+    .tool-btn span {
+      font-size: 10px;
+      color: var(--text-dim);
+      line-height: 1;
+    }
+    .tool-btn:active { background: var(--surface2); }
+
+    /* ── Error banner ── */
+    #error-banner {
+      position: fixed;
+      top: calc(var(--top-h) + var(--safe-top) + 8px);
+      left: 12px;
+      right: 12px;
+      background: var(--danger);
+      color: #fff;
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      display: none;
+      z-index: 100;
+      align-items: center;
+      gap: 8px;
+    }
+    #error-banner.visible { display: flex; }
+
+    /* ── Loading overlay ── */
+    #loading {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 200;
+      transition: opacity 0.3s;
+    }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── More menu overlay ── */
+    #menu-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      z-index: 50;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    #menu-overlay.visible { display: flex; }
+    #menu-sheet {
+      background: var(--surface);
+      border-radius: 16px 16px 0 0;
+      width: 100%;
+      max-width: 400px;
+      padding: 8px 0 calc(var(--safe-bottom) + 16px);
+    }
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 20px;
+      font-size: 15px;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .menu-item:active { background: var(--surface2); }
+    .menu-item.danger { color: var(--danger); }
+    .menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+    /* ── Shape picker ── */
+    #shape-picker {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      z-index: 60;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    #shape-picker.visible { display: flex; }
+    #shape-sheet {
+      background: var(--surface);
+      border-radius: 16px 16px 0 0;
+      width: 100%;
+      max-width: 400px;
+      padding: 8px 0 calc(var(--safe-bottom) + 16px);
+    }
+    .shape-row {
+      display: flex;
+      justify-content: space-around;
+      padding: 16px;
+      gap: 12px;
+    }
+    .shape-opt {
+      flex: 1;
+      height: 64px;
+      background: var(--surface2);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 28px;
+      cursor: pointer;
+      transition: background 0.15s;
+      border: 2px solid transparent;
+    }
+    .shape-opt:active { background: var(--border); }
+    .shape-opt span { font-size: 11px; color: var(--text-dim); }
+
+    /* ── Delete button ── */
+    #delete-btn {
+      background: none;
+      border: none;
+      color: var(--danger);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+    }
+    #delete-btn:active { background: rgba(248, 81, 73, 0.15); }
+
+    /* ── Connection status ── */
+    .conn-status {
+      font-size: 12px;
+      margin-left: 6px;
+      opacity: 0.8;
+    }
+
+    /* ── Agent editing badge ── */
+    .agent-badge {
+      font-size: 12px;
+      color: var(--accent);
+      background: rgba(88, 166, 255, 0.12);
+      border: 1px solid rgba(88, 166, 255, 0.3);
+      border-radius: 12px;
+      padding: 2px 10px;
+      margin-left: 8px;
+      white-space: nowrap;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── Synced flash ── */
+    #sync-flash {
+      position: fixed;
+      top: calc(var(--top-h) + var(--safe-top) + 8px);
+      right: 12px;
+      background: rgba(88, 166, 255, 0.9);
+      color: #fff;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      display: none;
+      z-index: 100;
+      pointer-events: none;
+    }
+    #sync-flash.visible { display: block; animation: flashFade 1.5s ease forwards; }
+    @keyframes flashFade { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
+  </style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="loading">
+  <div class="spinner"></div>
+  <div style="color:var(--text-dim);font-size:13px;">Connecting to server…</div>
+</div>
+
+<!-- Error banner -->
+<div id="error-banner">
+  <span>⚠️</span><span id="error-msg">Server unreachable</span>
+</div>
+
+<!-- Sync flash indicator -->
+<div id="sync-flash">✓ Synced</div>
+
+<div id="app">
+  <!-- Top bar -->
+  <header id="top-bar">
+    <div class="top-left">
+      <button class="icon-btn" id="btn-back" title="Back">⇦</button>
+      <span class="title" id="doc-title">Poster Designer</span>
+      <span id="conn-status" class="conn-status" title="Connection status">🔴</span>
+      <span id="agent-badge" class="agent-badge" style="display:none">✏️ Nexi is editing…</span>
+    </div>
+    <div class="top-right">
+      <button class="icon-btn" id="btn-undo" title="Undo (↩)">↩</button>
+      <button class="icon-btn" id="btn-redo" title="Redo (↪)" disabled>↪</button>
+    </div>
+  </header>
+
+  <!-- Canvas -->
+  <div id="canvas-wrap">
+    <canvas id="poster-canvas"></canvas>
+  </div>
+
+  <!-- Contextual toolbar (shown when element selected) -->
+  <div id="ctx-bar">
+    <button class="icon-btn" id="ctx-delete" title="Delete">🗑️</button>
+    <span class="ctx-label" id="ctx-label">Size</span>
+    <input type="range" class="ctx-slider" id="ctx-size" min="8" max="200" value="24">
+    <span class="ctx-label" id="ctx-label2">Color</span>
+    <div class="ctx-color" id="ctx-color-wrap">
+      <input type="color" id="ctx-color" value="#ffffff">
+    </div>
+  </div>
+
+  <!-- Bottom toolbar -->
+  <nav id="bottom-bar">
+    <button class="tool-btn" id="btn-image" title="Add Image">
+      🖼️<span>Image</span>
+    </button>
+    <button class="tool-btn" id="btn-text" title="Add Text">
+      ✏️<span>Text</span>
+    </button>
+    <button class="tool-btn" id="btn-shape" title="Add Shape">
+      🔲<span>Shape</span>
+    </button>
+    <button class="tool-btn" id="btn-bg" title="Background">
+      🎨<span>BG</span>
+    </button>
+    <button class="tool-btn" id="btn-export" title="Export">
+      ⬇️<span>Export</span>
+    </button>
+    <button class="tool-btn" id="btn-more" title="More">
+      ☰<span>More</span>
+    </button>
+  </nav>
+</div>
+
+<!-- More menu -->
+<div id="menu-overlay">
+  <div id="menu-sheet">
+    <div class="menu-item" id="menu-templates">📄 Templates</div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" id="menu-about">ℹ️ About</div>
+    <div class="menu-divider"></div>
+    <div class="menu-item danger" id="menu-reset">🗑️ New Design</div>
+  </div>
+</div>
+
+<!-- Shape picker -->
+<div id="shape-picker">
+  <div id="shape-sheet">
+    <div class="shape-row">
+      <div class="shape-opt" data-shape="rect">
+        <div style="width:36px;height:28px;background:var(--accent);border-radius:4px;"></div>
+        <span>Rectangle</span>
+      </div>
+      <div class="shape-opt" data-shape="circle">
+        <div style="width:32px;height:32px;background:var(--accent);border-radius:50%;"></div>
+        <span>Circle</span>
+      </div>
+      <div class="shape-opt" data-shape="triangle">
+        <div style="width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-bottom:32px solid var(--accent);"></div>
+        <span>Triangle</span>
+      </div>
+      <div class="shape-opt" data-shape="line">
+        <div style="width:40px;height:3px;background:var(--accent);border-radius:2px;"></div>
+        <span>Line</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.js"></script>
+<script>
+// =============================================================================
+// Server URL — from URL param ?server= or window.location.origin or default
+// =============================================================================
+const SERVER = (() => {
+  const params = new URLSearchParams(window.location.search);
+  const s = params.get('server');
+  if (s) return s;
+  if (window.location.origin !== 'null' && !window.location.origin.includes('://localhost')) {
+    return window.location.origin;
+  }
+  return 'http://localhost:8000';
+})();
+
+// =============================================================================
+// DPI / unit conversion
+// =============================================================================
+const DPI = 300;
+const MM_PER_INCH = 25.4;
+function mmToPx(mm) { return mm * DPI / MM_PER_INCH; }
+function pxToMm(px) { return px / DPI * MM_PER_INCH; }
+
+// =============================================================================
+// Fabric.js canvas
+// =============================================================================
+const canvasWrap = document.getElementById('canvas-wrap');
+const canvasEl = document.getElementById('poster-canvas');
+
+const fabricCanvas = new fabric.Canvas('poster-canvas', {
+  preserveObjectStacking: true,
+  stopContextMenu: true,
+  fireRightClick: true,
+  width: mmToPx(297),   // default A4
+  height: mmToPx(210),
+});
+
+// Global state
+let currentState = null;   // full state from server
+let selectedId = null;    // id of currently selected element
+
+// =============================================================================
+// Utility
+// =============================================================================
+function showError(msg) {
+  const el = document.getElementById('error-banner');
+  document.getElementById('error-msg').textContent = msg;
+  el.classList.add('visible');
+  setTimeout(() => el.classList.remove('visible'), 4000);
+}
+
+function showLoading(show) {
+  const el = document.getElementById('loading');
+  if (show) el.classList.remove('hidden');
+  else el.classList.add('hidden');
+}
+
+function hideMenu() {
+  document.getElementById('menu-overlay').classList.remove('visible');
+}
+
+function hideShapePicker() {
+  document.getElementById('shape-picker').classList.remove('visible');
+}
+
+// =============================================================================
+// Canvas sizing & zoom
+// =============================================================================
+function fitCanvas(canvasWidthPx, canvasHeightPx) {
+  const wrap = canvasWrap.getBoundingClientRect();
+  const scaleX = wrap.width / canvasWidthPx;
+  const scaleY = wrap.height / canvasHeightPx;
+  const scale = Math.min(scaleX, scaleY) * 0.9;
+
+  fabricCanvas.setWidth(canvasWidthPx * scale);
+  fabricCanvas.setHeight(canvasHeightPx * scale);
+  fabricCanvas.setZoom(scale);
+
+  // Position the element
+  canvasEl.style.transform = `translate(0, 0)`;
+
+  fabricCanvas.renderAll();
+}
+
+function resizeCanvas() {
+  if (!currentState) return;
+  const meta = currentState.meta;
+  const w = mmToPx(meta.width_mm);
+  const h = mmToPx(meta.height_mm);
+  fabricCanvas.setWidth(w);
+  fabricCanvas.setHeight(h);
+  fitCanvas(w, h);
+}
+
+// =============================================================================
+// Render state → Fabric canvas
+// =============================================================================
+function renderCanvas(state) {
+  fabricCanvas.clear();
+
+  const meta = state.meta;
+  const bg = state.background;
+
+  // Background
+  if (bg.type === 'solid') {
+    fabricCanvas.backgroundColor = bg.color || '#ffffff';
+  } else if (bg.type === 'gradient' && bg.gradient) {
+    const { angle, stops } = bg.gradient;
+    const deg = (angle || 0) * Math.PI / 180;
+    const x1 = 50 + 50 * Math.cos(deg);
+    const y1 = 50 + 50 * Math.sin(deg);
+    const g = new fabric.Gradient({
+      type: 'linear',
+      gradientUnits: 'percentage',
+      coords: { x1: 50, y1: 50, x2: x1, y2: y1 },
+      colorStops: stops.map((s, i) => ({ offset: i / (stops.length - 1), color: s.color })),
+    });
+    fabricCanvas.backgroundColor = g;
+  } else {
+    fabricCanvas.backgroundColor = '#ffffff';
+  }
+
+  // Elements
+  for (const el of (state.elements || [])) {
+    addElementToCanvas(el, false);
+  }
+
+  fabricCanvas.renderAll();
+  resizeCanvas();
+}
+
+// =============================================================================
+// Add one element to Fabric canvas
+// =============================================================================
+function addElementToCanvas(el, selectIt = true) {
+  const pos = el.position || {};
+  const style = el.style || {};
+
+  const x = mmToPx(pos.x || 0);
+  const y = mmToPx(pos.y || 0);
+  const w = mmToPx(pos.width || 50);
+  const h = mmToPx(pos.height || 20);
+  const angle = pos.rotation || 0;
+
+  let obj = null;
+
+  if (el.type === 'text' || el.type === 'textbox') {
+    obj = new fabric.Textbox(el.content || 'Text', {
+      left: x,
+      top: y,
+      width: w,
+      fontFamily: style.fontFamily || 'Noto Sans',
+      fontSize: style.fontSize || 24,
+      fontWeight: style.fontWeight || '400',
+      fill: style.color || '#000000',
+      textAlign: style.textAlign || 'left',
+      lineHeight: style.lineHeight || 1.4,
+      originX: 'left',
+      originY: 'top',
+      angle,
+    });
+  } else if (el.type === 'shape' || el.shape) {
+    const shapeType = el.shape || style.shape || 'rect';
+    if (shapeType === 'circle') {
+      obj = new fabric.Circle({
+        left: x, top: y, radius: Math.min(w, h) / 2,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      });
+    } else if (shapeType === 'triangle') {
+      obj = new fabric.Triangle({
+        left: x, top: y, width: w, height: h,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      });
+    } else if (shapeType === 'line') {
+      obj = new fabric.Line([x, y, x + w, y], {
+        stroke: style.strokeColor || style.color || '#58A6FF',
+        strokeWidth: style.strokeWidth || 2,
+      });
+    } else {
+      obj = new fabric.Rect({
+        left: x, top: y, width: w, height: h,
+        fill: style.fillColor || style.color || '#58A6FF',
+        rx: style.borderRadius || 0,
+        originX: 'left', originY: 'top', angle,
+      });
+    }
+  } else if (el.type === 'image') {
+    fabric.Image.fromURL(el.content || '', (img) => {
+      img.set({ left: x, top: y, scaleX: w / (img.width || 1), scaleY: h / (img.height || 1), angle });
+      img.setCoords();
+      fabricCanvas.add(img);
+      fabricCanvas.renderAll();
+    });
+    return; // async — don't add synchronously
+  }
+
+  if (obj) {
+    obj.set({ selectable: !el.locked, evented: !el.locked, visible: el.visible !== false });
+    obj.setCoords();
+    fabricCanvas.add(obj);
+
+    if (selectIt) {
+      fabricCanvas.setActiveObject(obj);
+    }
+  }
+}
+
+// =============================================================================
+// Sync element selection to contextual toolbar
+// =============================================================================
+function updateContextBar() {
+  const ctxBar = document.getElementById('ctx-bar');
+  const active = fabricCanvas.getActiveObject();
+
+  if (!active) {
+    ctxBar.classList.remove('visible');
+    selectedId = null;
+    return;
+  }
+
+  ctxBar.classList.add('visible');
+
+  // Find element id from custom prop
+  const id = active.elementId;
+  selectedId = id || null;
+
+  const sizeInput = document.getElementById('ctx-size');
+  const colorInput = document.getElementById('ctx-color');
+  const ctxLabel = document.getElementById('ctx-label');
+
+  if (active.type === 'textbox' || active.type === 'text') {
+    sizeInput.value = active.fontSize || 24;
+    colorInput.value = active.fill || '#ffffff';
+    ctxLabel.textContent = 'Size';
+    document.getElementById('ctx-label2').textContent = 'Color';
+  } else if (active.type === 'circle' || active.type === 'rect' || active.type === 'triangle') {
+    sizeInput.value = Math.round((active.width || 50));
+    colorInput.value = active.fill || '#58A6FF';
+    ctxLabel.textContent = 'Width';
+    document.getElementById('ctx-label2').textContent = 'Fill';
+  }
+}
+
+// =============================================================================
+// Sync Fabric object → server
+// =============================================================================
+async function syncToServer() {
+  if (!selectedId) return;
+  const active = fabricCanvas.getActiveObject();
+  if (!active) return;
+
+  const pos = active.getBoundingRect(true);
+  const payload = {
+    position: {
+      x: pxToMm(pos.left / (fabricCanvas.getZoom())),
+      y: pxToMm(pos.top / (fabricCanvas.getZoom())),
+      width: pxToMm(active.width * (active.scaleX || 1)),
+      height: pxToMm(active.height * (active.scaleY || 1)),
+      rotation: active.angle || 0,
+    }
+  };
+
+  // For text, sync style too
+  if (active.type === 'textbox' || active.type === 'text') {
+    payload.style = {
+      fontSize: active.fontSize,
+      color: active.fill,
+    };
+  } else if (active.type === 'circle' || active.type === 'rect' || active.type === 'triangle') {
+    payload.style = { fillColor: active.fill };
+  }
+
+  try {
+    await fetch(`${SERVER}/api/element/${selectedId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (e) {
+    showError('Failed to sync changes');
+  }
+}
+
+// =============================================================================
+// Event handlers
+// =============================================================================
+
+// Canvas selection changes
+fabricCanvas.on('selection:created', updateContextBar);
+fabricCanvas.on('selection:updated', updateContextBar);
+fabricCanvas.on('selection:cleared', updateContextBar);
+
+// Object modified (move/resize/rotate)
+fabricCanvas.on('object:modified', syncToServer);
+
+// Text editing committed
+fabricCanvas.on('text:changed', (e) => {
+  const id = e.target.elementId;
+  if (!id) return;
+  fetch(`${SERVER}/api/element/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: e.target.text }),
+  }).catch(() => showError('Failed to save text'));
+});
+
+// Keyboard delete
+document.addEventListener('keydown', async (e) => {
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+    const active = fabricCanvas.getActiveObject();
+    if (!active) return;
+    const id = active.elementId;
+    if (!id) return;
+    fabricCanvas.remove(active);
+    try {
+      await fetch(`${SERVER}/api/element/${id}?agent=pwa`, { method: 'DELETE' });
+    } catch { showError('Failed to delete element'); }
+    updateContextBar();
+  }
+});
+
+// Context bar size slider
+document.getElementById('ctx-size').addEventListener('input', (e) => {
+  const active = fabricCanvas.getActiveObject();
+  if (!active) return;
+  const val = parseInt(e.target.value);
+  if (active.type === 'textbox' || active.type === 'text') {
+    active.set('fontSize', val);
+  } else {
+    active.set('scaleX', 1);
+    active.set('width', val);
+  }
+  active.setCoords();
+  fabricCanvas.renderAll();
+});
+
+document.getElementById('ctx-size').addEventListener('change', syncToServer);
+
+// Context bar color
+document.getElementById('ctx-color').addEventListener('input', (e) => {
+  const active = fabricCanvas.getActiveObject();
+  if (!active) return;
+  if (active.type === 'textbox' || active.type === 'text') {
+    active.set('fill', e.target.value);
+  } else {
+    active.set('fill', e.target.value);
+  }
+  active.setCoords();
+  fabricCanvas.renderAll();
+});
+
+document.getElementById('ctx-color').addEventListener('change', syncToServer);
+
+// Context bar delete
+document.getElementById('ctx-delete').addEventListener('click', async () => {
+  const active = fabricCanvas.getActiveObject();
+  if (!active) return;
+  const id = active.elementId;
+  fabricCanvas.remove(active);
+  if (id) {
+    try { await fetch(`${SERVER}/api/element/${id}?agent=pwa`, { method: 'DELETE' }); }
+    catch { showError('Failed to delete element'); }
+  }
+  updateContextBar();
+});
+
+// Toolbar: Text
+document.getElementById('btn-text').addEventListener('click', async () => {
+  try {
+    const res = await fetch(`${SERVER}/api/element`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'text',
+        content: 'New Text',
+        style: { fontSize: 36, color: '#ffffff', textAlign: 'center', fontFamily: 'Noto Sans' },
+        position: { x: 50, y: 50, width: 120, height: 30 },
+      }),
+    });
+    if (!res.ok) throw new Error('Server error');
+    const el = await res.json();
+    addElementToCanvas(el, true);
+    // Store id on fabric object
+    const active = fabricCanvas.getActiveObject();
+    if (active) active.elementId = el.id;
+  } catch (e) {
+    showError('Failed to add text — is server running?');
+  }
+});
+
+// Toolbar: Image
+document.getElementById('btn-image').addEventListener('click', () => {
+  showError('Image upload coming soon');
+});
+
+// Toolbar: Shape
+document.getElementById('btn-shape').addEventListener('click', () => {
+  document.getElementById('shape-picker').classList.add('visible');
+});
+
+document.querySelectorAll('.shape-opt').forEach(opt => {
+  opt.addEventListener('click', async () => {
+    const shape = opt.dataset.shape;
+    hideShapePicker();
+
+    try {
+      const res = await fetch(`${SERVER}/api/element`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'shape',
+          shape,
+          style: { color: '#58A6FF', fillColor: '#58A6FF', strokeColor: '#58A6FF' },
+          position: { x: 80, y: 80, width: 60, height: 60 },
+        }),
+      });
+      if (!res.ok) throw new Error();
+      const el = await res.json();
+      addElementToCanvas(el, true);
+      const active = fabricCanvas.getActiveObject();
+      if (active) active.elementId = el.id;
+    } catch {
+      showError('Failed to add shape');
+    }
+  });
+});
+
+// Close shape picker on overlay click
+document.getElementById('shape-picker').addEventListener('click', (e) => {
+  if (e.target.id === 'shape-picker') hideShapePicker();
+});
+
+// Toolbar: BG
+document.getElementById('btn-bg').addEventListener('click', () => {
+  const c = prompt('Enter background color (hex):', currentState?.background?.color || '#0D1117');
+  if (!c) return;
+  fetch(`${SERVER}/api/background`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'solid', color: c, agent: 'pwa' }),
+  }).then(() => {
+    if (currentState) currentState.background.color = c;
+    fabricCanvas.backgroundColor = c;
+    fabricCanvas.renderAll();
+  }).catch(() => showError('Failed to set background'));
+});
+
+// Toolbar: Export
+document.getElementById('btn-export').addEventListener('click', async () => {
+  try {
+    const res = await fetch(`${SERVER}/api/export`, { method: 'POST' });
+    if (!res.ok) throw new Error();
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'poster.png';
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch {
+    showError('Export not available — check server');
+  }
+});
+
+// Toolbar: More
+document.getElementById('btn-more').addEventListener('click', () => {
+  document.getElementById('menu-overlay').classList.add('visible');
+});
+
+// Close menus
+document.getElementById('menu-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'menu-overlay') hideMenu();
+});
+
+document.getElementById('menu-templates').addEventListener('click', async () => {
+  hideMenu();
+  const tpl = prompt('Enter template name:\nA4, A3, Square, Mobile, Wide', 'A4');
+  if (!tpl) return;
+  try {
+    const res = await fetch(`${SERVER}/api/template`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: tpl, agent: 'pwa' }),
+    });
+    if (!res.ok) throw new Error();
+    await loadState();
+  } catch {
+    showError('Failed to apply template');
+  }
+});
+
+document.getElementById('menu-about').addEventListener('click', () => {
+  hideMenu();
+  alert('Poster Designer\nv0.1.0 — PWA Edition\nMobile-first Fabric.js canvas');
+});
+
+document.getElementById('menu-reset').addEventListener('click', async () => {
+  hideMenu();
+  if (!confirm('Start a new design? Current work will be lost.')) return;
+  try {
+    await fetch(`${SERVER}/api/template`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'A4', agent: 'pwa' }),
+    });
+    await loadState();
+  } catch {
+    showError('Failed to reset');
+  }
+});
+
+// Undo
+document.getElementById('btn-undo').addEventListener('click', async () => {
+  try {
+    const res = await fetch(`${SERVER}/api/undo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agent: 'pwa' }),
+    });
+    if (!res.ok) throw new Error();
+    await loadState();
+  } catch {
+    showError('Undo failed');
+  }
+});
+
+// Redo (placeholder — not implemented on server yet)
+document.getElementById('btn-redo').addEventListener('click', () => {
+  showError('Redo not yet implemented');
+});
+
+// Back button
+document.getElementById('btn-back').addEventListener('click', () => {
+  window.location.href = './';
+});
+
+// =============================================================================
+// Load state from server
+// =============================================================================
+async function loadState() {
+  showLoading(true);
+  try {
+    const res = await fetch(`${SERVER}/api/state`);
+    if (!res.ok) throw new Error();
+    currentState = await res.json();
+
+    // Update title
+    const meta = currentState.meta;
+    document.getElementById('doc-title').textContent = `Poster Designer — ${meta.template}`;
+
+    renderCanvas(currentState);
+  } catch (e) {
+    showError(`Cannot connect to server at ${SERVER}`);
+    // Retry every 5s
+    setTimeout(loadState, 5000);
+  } finally {
+    showLoading(false);
+  }
+}
+
+// =============================================================================
+// SSE real-time updates
+// =============================================================================
+let sseConnected = false;
+let sseReconnectDelay = 1000;
+let agentBadgeTimer = null;
+let sseDebounceTimer = null;
+
+// Connect to SSE endpoint
+function connectSSE() {
+  if (window.EventSource) {
+    const evtSource = new EventSource(`${SERVER}/api/events`);
+
+    evtSource.addEventListener('open', () => {
+      sseConnected = true;
+      sseReconnectDelay = 1000;
+      document.getElementById('conn-status').textContent = '🟢';
+    });
+
+    evtSource.addEventListener('message', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        handleSSEEvent(data);
+      } catch (e) {
+        console.warn('SSE parse error', e);
+      }
+    });
+
+    evtSource.addEventListener('error', () => {
+      sseConnected = false;
+      document.getElementById('conn-status').textContent = '🔴';
+      // Reconnect with backoff
+      setTimeout(connectSSE, sseReconnectDelay);
+      sseReconnectDelay = Math.min(sseReconnectDelay * 2, 30000);
+    });
+  }
+}
+
+// Handle incoming SSE events
+async function handleSSEEvent(data) {
+  const { type, payload } = data;
+
+  switch (type) {
+    case 'element_added':
+    case 'element_updated':
+    case 'element_deleted':
+    case 'state_replaced':
+      // Debounce rapid updates — only refresh once per 300ms
+      if (sseDebounceTimer) clearTimeout(sseDebounceTimer);
+      sseDebounceTimer = setTimeout(async () => {
+        await refreshCanvas();
+        triggerSyncFlash();
+      }, 300);
+      break;
+
+    case 'compose_complete':
+      showNotification('✓ Poster composed!');
+      break;
+
+    case 'agent_editing':
+      showAgentIndicator(payload.action);
+      break;
+  }
+}
+
+// Refresh canvas from server state
+async function refreshCanvas() {
+  // Skip if user is actively interacting
+  const active = fabricCanvas.getActiveObject();
+  if (active && (active.isDragging || active.isMoving)) {
+    return; // defer until interaction ends
+  }
+
+  try {
+    const res = await fetch(`${SERVER}/api/state`);
+    if (!res.ok) return;
+    currentState = await res.json();
+    renderCanvas(currentState);
+  } catch (e) {
+    // Silently fail — don't interrupt user
+  }
+}
+
+// Show agent editing indicator
+function showAgentIndicator(action) {
+  const badge = document.getElementById('agent-badge');
+  badge.textContent = `✏️ Nexi: ${action || 'editing…'}`;
+  badge.style.display = 'inline';
+  if (agentBadgeTimer) clearTimeout(agentBadgeTimer);
+  agentBadgeTimer = setTimeout(() => {
+    badge.style.display = 'none';
+  }, 5000);
+}
+
+// Trigger visual sync indicator
+function triggerSyncFlash() {
+  const el = document.getElementById('sync-flash');
+  el.classList.remove('visible');
+  void el.offsetWidth; // reflow to restart animation
+  el.classList.add('visible');
+  setTimeout(() => el.classList.remove('visible'), 1500);
+}
+
+// Simple notification
+function showNotification(msg) {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#58A6FF;color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;z-index:300;animation:fadeIn 0.2s';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.5s'; setTimeout(() => el.remove(), 500); }, 2500);
+}
+
+// =============================================================================
+// Resize handling
+// =============================================================================
+window.addEventListener('resize', () => {
+  if (currentState) resizeCanvas();
+});
+
+// =============================================================================
+// Prevent default touch gestures on canvas
+// =============================================================================
+canvasEl.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+canvasEl.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
+canvasEl.addEventListener('touchend', (e) => e.stopPropagation(), { passive: true });
+
+// =============================================================================
+// PWA: register service worker
+// =============================================================================
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// =============================================================================
+// Start
+// =============================================================================
+loadState().then(() => {
+  // Connect SSE after initial state load to avoid race conditions
+  connectSSE();
+});
+</script>
+</body>
+</html>
