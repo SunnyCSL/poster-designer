@@ -9,6 +9,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+
 from cli.commands import PosterCLI, PosterAPIError
 
 # ── Output helpers ──────────────────────────────────────────────────────────
@@ -209,6 +211,49 @@ sub.add_parser("upload", help="Upload an image file to the server.").add_argumen
 sub.add_parser("load", help="Load state from a JSON file.").add_argument(
     "filepath", help="Path to the state JSON file."
 )
+
+
+# ── poster from-vision ───────────────────────────────────────────────────────
+
+p_vision = sub.add_parser("from-vision", help="Create a poster from a reference image using vision analysis.")
+p_vision.add_argument(
+    "image",
+    help="Path to the reference image file.",
+)
+p_vision.add_argument(
+    "--template", "-t",
+    default="A4",
+    choices=["A4", "A3", "Square", "Mobile", "Wide"],
+    help="Template size (default: A4)",
+)
+p_vision.add_argument(
+    "--auto",
+    action="store_true",
+    default=True,
+    help="Run full auto pipeline (analyze + create poster) [default: True]",
+)
+p_vision.add_argument(
+    "--analyze",
+    action="store_true",
+    help="Analysis-only mode (no poster creation)",
+)
+
+
+# ── poster from-text ─────────────────────────────────────────────────────────
+
+p_nl = sub.add_parser("from-text", help="Create poster from natural language description")
+p_nl.add_argument("description", nargs="?", help="Text description")
+p_nl.add_argument("--template", choices=["A4", "A3", "Square", "Mobile", "Wide"])
+p_nl.add_argument("--image", help="Reference image for style")
+p_nl.add_argument("--dry-run", action="store_true", help="Show spec without creating")
+
+
+# ── poster from-speech ───────────────────────────────────────────────────────
+
+p_sp = sub.add_parser("from-speech", help="Create poster from voice/audio")
+p_sp.add_argument("audio", nargs="?", help="Audio file path")
+p_sp.add_argument("--template", choices=["A4", "A3", "Square", "Mobile", "Wide"])
+p_sp.add_argument("--record", action="store_true", help="Record from microphone")
 
 
 # ── poster save ─────────────────────────────────────────────────────────────
@@ -424,8 +469,8 @@ def main():
             if args.json:
                 out("", json_output=True, data=res)
             else:
-                undone = res.get("undone", "?")
-                out(f"✅ Undone: {undone}")
+                template = res.get("meta", {}).get("template", "?")
+                out(f"✅ Undo complete — restored to {template}")
 
         # ── History ────────────────────────────────────────────────────────────
         elif cmd == "history":
@@ -433,11 +478,11 @@ def main():
             if args.json:
                 out("", json_output=True, data=res)
             else:
-                entries = res.get("history", [])
+                entries = res if isinstance(res, list) else res.get("history", [])
                 if not entries:
                     out("No history entries.")
                 for entry in entries:
-                    out(f"  [{entry.get('timestamp', '')}] {entry.get('command', '?')}")
+                    out(f"  [{entry.get('timestamp', '')}] {entry.get('action', '?')}")
 
         # ── Templates ─────────────────────────────────────────────────────────
         elif cmd == "templates":
@@ -445,9 +490,13 @@ def main():
             if args.json:
                 out("", json_output=True, data=res)
             else:
-                templates = res.get("templates", [])
-                for t in templates:
-                    out(f"  • {t.get('name')} — {t.get('description', '')}")
+                if isinstance(res, dict):
+                    for name, info in res.items():
+                        desc = f"{info.get('width_mm', '?')}×{info.get('height_mm', '?')}mm"
+                        out(f"  • {name} — {desc}")
+                elif isinstance(res, list):
+                    for t in res:
+                        out(f"  • {t.get('name')} — {t.get('description', '')}")
 
         # ── Compose ─────────────────────────────────────────────────────────────
         elif cmd == "compose":
@@ -497,6 +546,57 @@ def main():
                 out("", json_output=True, data=res)
             else:
                 out(f"✅ State saved to {args.filepath}")
+
+        # ── From-vision ───────────────────────────────────────────────────────────
+        elif cmd == "from-vision":
+            import scripts.vision_to_poster as v2p
+            import argparse as ap
+
+            # Mirror the vision-to-poster.py CLI interface
+            vision_args = [args.image]
+            if args.analyze:
+                vision_args.append("--analyze")
+            else:
+                vision_args.append("--auto")
+            vision_args.extend(["--template", args.template])
+            vision_args.extend(["--server", args.server])
+
+            old_argv = sys.argv
+            sys.argv = ["vision-to-poster.py"] + vision_args
+            try:
+                v2p.main()
+            finally:
+                sys.argv = old_argv
+
+        # ── From-text ──────────────────────────────────────────────────────────────
+        elif cmd == "from-text":
+            import subprocess as sp_run
+            scripts_dir = PROJECT_DIR / "scripts"
+            cmd = [sys.executable, str(scripts_dir / "nl-to-poster.py")]
+            if args.description:
+                cmd.append(args.description)
+            if args.template:
+                cmd.extend(["--template", args.template])
+            if args.image:
+                cmd.extend(["--image", args.image])
+            if args.dry_run:
+                cmd.append("--dry-run")
+            cmd.extend(["--server", args.server])
+            sp_run.run(cmd)
+
+        # ── From-speech ───────────────────────────────────────────────────────────
+        elif cmd == "from-speech":
+            import subprocess as sp_run
+            scripts_dir = PROJECT_DIR / "scripts"
+            cmd = [sys.executable, str(scripts_dir / "speech-to-poster.py")]
+            if args.audio:
+                cmd.append(args.audio)
+            if args.template:
+                cmd.extend(["--template", args.template])
+            if getattr(args, 'record', False):
+                cmd.append("--record")
+            cmd.extend(["--server", args.server])
+            sp_run.run(cmd)
 
         else:
             fatal(f"Unknown command: {cmd}")
