@@ -10,7 +10,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 
 from .state import State, get_state, TEMPLATES
 from .sse import SSEManager
@@ -190,6 +190,41 @@ async def reorder_layers(request: Request):
     state.reorder_layers(body["ordered_ids"], agent=agent)
     await sse.broadcast("state_replaced", {})
     return {"ok": True}
+
+
+@app.post("/api/compose")
+async def compose_poster():
+    """Render current state into a poster image. Returns PNG file."""
+    data = state.current()
+    from server.compose import compose
+    output_dir = Path(__file__).parent.parent / "output"
+    output_dir.mkdir(exist_ok=True)
+    output_path = output_dir / "poster.png"
+    compose(data, output_path=output_path)
+    await sse.broadcast("compose_complete", {"path": str(output_path)})
+    return {"status": "ok", "path": str(output_path)}
+
+
+@app.post("/api/export")
+async def export_poster(format: str = "png"):
+    """Export poster as PNG or PDF."""
+    data = state.current()
+    from server.compose import compose
+    output_dir = Path(__file__).parent.parent / "output"
+    output_dir.mkdir(exist_ok=True)
+    ext = format.lower()
+    if ext not in ("png", "pdf"):
+        ext = "png"
+    output_path = output_dir / f"poster.{ext}"
+    img = compose(data)
+    if ext == "png":
+        img.save(str(output_path), "PNG")
+    elif ext == "pdf":
+        img.save(str(output_path), "PDF", resolution=data["meta"]["dpi"])
+    return FileResponse(
+        str(output_path),
+        media_type=f"image/{ext}" if ext == "png" else "application/pdf",
+    )
 
 
 @app.get("/api/events")
