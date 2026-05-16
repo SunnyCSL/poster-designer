@@ -1,0 +1,515 @@
+#!/usr/bin/env python3
+"""Poster Designer CLI — executable entry point."""
+
+import sys
+import os
+import argparse
+import json
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from cli.commands import PosterCLI, PosterAPIError
+
+# ── Output helpers ──────────────────────────────────────────────────────────
+
+def out(msg: str, *, json_output: bool = False, data: dict = None):
+    if json_output and data is not None:
+        print(json.dumps(data, indent=2, ensure_ascii=False))
+    else:
+        print(msg)
+
+
+def fatal(msg: str):
+    print(f"❌  {msg}", file=sys.stderr)
+    sys.exit(1)
+
+
+# ── Argparse setup ──────────────────────────────────────────────────────────
+
+parser = argparse.ArgumentParser(
+    prog="poster",
+    description="Poster Designer CLI — manage poster designs via the REST API.",
+)
+parser.add_argument(
+    "--server",
+    default=os.environ.get("POSTER_SERVER", "http://localhost:8000"),
+    help="API server URL (default: http://localhost:8000 or $POSTER_SERVER)",
+)
+parser.add_argument(
+    "--json", action="store_true", help="Output raw JSON instead of human-readable text."
+)
+sub = parser.add_subparsers(dest="command", required=True)
+
+
+# ── poster state ────────────────────────────────────────────────────────────
+
+p_state = sub.add_parser("state", help="Show current canvas state summary.")
+
+
+# ── poster new ─────────────────────────────────────────────────────────────
+
+p_new = sub.add_parser("new", help="Create a new design.")
+p_new.add_argument(
+    "template",
+    nargs="?",
+    default="A4",
+    choices=["A4", "A3", "Square", "Mobile", "Wide"],
+    help="Template size (default: A4)",
+)
+
+
+# ── poster add-text ─────────────────────────────────────────────────────────
+
+p_text = sub.add_parser("add-text", help="Add a text element.")
+p_text.add_argument("content", help="Text content.")
+p_text.add_argument("--x", type=float, default=0, help="X position (mm)")
+p_text.add_argument("--y", type=float, default=0, help="Y position (mm)")
+p_text.add_argument("--width", type=float, help="Element width (mm)")
+p_text.add_argument("--height", type=float, help="Element height (mm)")
+p_text.add_argument("--font-size", type=int, default=24, help="Font size (px)")
+p_text.add_argument("--font-weight", default="400", help="Font weight")
+p_text.add_argument("--font-family", default="Noto Sans TC", help="Font family")
+p_text.add_argument("--color", default="#000000", help="Text color (hex)")
+p_text.add_argument("--text-align", default="left", choices=["left", "center", "right"], help="Text alignment")
+p_text.add_argument("--line-height", type=float, default=1.4, help="Line height")
+p_text.add_argument("--letter-spacing", type=float, default=0, help="Letter spacing (px)")
+p_text.add_argument("--rotation", type=float, default=0, help="Rotation (degrees)")
+p_text.add_argument("--layer", type=int, help="Layer index")
+p_text.add_argument("--locked", action="store_true", help="Lock element")
+p_text.add_argument("--visible", action="store_true", default=True, help="Visibility")
+p_text.add_argument("--bold", action="store_true", help="Bold font weight")
+
+
+# ── poster add-image ────────────────────────────────────────────────────────
+
+p_img = sub.add_parser("add-image", help="Add an image element.")
+p_img.add_argument("src", help="Image source (URL or path).")
+p_img.add_argument("--x", type=float, default=0, help="X position (mm)")
+p_img.add_argument("--y", type=float, default=0, help="Y position (mm)")
+p_img.add_argument("--width", type=float, help="Element width (mm)")
+p_img.add_argument("--height", type=float, help="Element height (mm)")
+p_img.add_argument("--rotation", type=float, default=0, help="Rotation (degrees)")
+p_img.add_argument("--layer", type=int, help="Layer index")
+p_img.add_argument("--locked", action="store_true", help="Lock element")
+p_img.add_argument("--visible", action="store_true", default=True, help="Visibility")
+
+
+# ── poster add-shape ────────────────────────────────────────────────────────
+
+p_shape = sub.add_parser("add-shape", help="Add a shape element.")
+p_shape.add_argument(
+    "shape_type",
+    choices=["rect", "circle", "line"],
+    help="Shape type",
+)
+p_shape.add_argument("--x", type=float, default=0, help="X position (mm)")
+p_shape.add_argument("--y", type=float, default=0, help="Y position (mm)")
+p_shape.add_argument("--width", type=float, default=100, help="Width (mm)")
+p_shape.add_argument("--height", type=float, default=100, help="Height (mm)")
+p_shape.add_argument("--fill", default="#4A90E2", help="Fill color (hex)")
+p_shape.add_argument("--stroke", help="Stroke color (hex)")
+p_shape.add_argument("--stroke-width", type=float, default=0, help="Stroke width")
+p_shape.add_argument("--rotation", type=float, default=0, help="Rotation (degrees)")
+p_shape.add_argument("--layer", type=int, help="Layer index")
+p_shape.add_argument("--locked", action="store_true", help="Lock element")
+p_shape.add_argument("--visible", action="store_true", default=True, help="Visibility")
+
+
+# ── poster update ────────────────────────────────────────────────────────────
+
+p_update = sub.add_parser("update", help="Update an existing element.")
+p_update.add_argument("element_id", help="Element ID to update.")
+p_update.add_argument("--content", help="New text content.")
+p_update.add_argument("--x", type=float, help="New X position (mm)")
+p_update.add_argument("--y", type=float, help="New Y position (mm)")
+p_update.add_argument("--width", type=float, help="New width (mm)")
+p_update.add_argument("--height", type=float, help="New height (mm)")
+p_update.add_argument("--font-size", type=int, help="Font size (px)")
+p_update.add_argument("--font-weight", help="Font weight")
+p_update.add_argument("--font-family", help="Font family")
+p_update.add_argument("--color", help="Text color (hex)")
+p_update.add_argument("--text-align", choices=["left", "center", "right"], help="Text alignment")
+p_update.add_argument("--line-height", type=float, help="Line height")
+p_update.add_argument("--letter-spacing", type=float, help="Letter spacing (px)")
+p_update.add_argument("--rotation", type=float, help="Rotation (degrees)")
+p_update.add_argument("--layer", type=int, help="Layer index")
+p_update.add_argument("--locked", type=bool, help="Lock state")
+p_update.add_argument("--visible", type=bool, help="Visibility")
+
+
+# ── poster remove ────────────────────────────────────────────────────────────
+
+p_remove = sub.add_parser("remove", help="Remove an element.")
+p_remove.add_argument("element_id", help="Element ID to remove.")
+
+
+# ── poster reorder ──────────────────────────────────────────────────────────
+
+p_reorder = sub.add_parser("reorder", help="Reorder element layers.")
+p_reorder.add_argument("element_ids", nargs="+", help="Element IDs in desired order (bottom → top).")
+
+
+# ── poster set-bg ───────────────────────────────────────────────────────────
+
+p_bg = sub.add_parser("set-bg", help="Set canvas background.")
+p_bg.add_argument("--color", help="Solid color (hex)")
+p_bg.add_argument("--type", default="solid", choices=["solid", "gradient", "image"],
+                  help="Background type")
+p_bg.add_argument("--gradient-angle", type=float, default=90, help="Gradient angle (degrees)")
+p_bg.add_argument("--gradient-start", help="Gradient start color (hex)")
+p_bg.add_argument("--gradient-end", help="Gradient end color (hex)")
+p_bg.add_argument("--image-url", help="Background image URL")
+
+
+# ── poster undo ─────────────────────────────────────────────────────────────
+
+sub.add_parser("undo", help="Undo the last operation.")
+
+
+# ── poster history ──────────────────────────────────────────────────────────
+
+p_hist = sub.add_parser("history", help="Show recent command history.")
+p_hist.add_argument("--limit", type=int, default=20, help="Number of entries (default: 20)")
+
+
+# ── poster templates ────────────────────────────────────────────────────────
+
+sub.add_parser("templates", help="List available templates.")
+
+
+# ── poster compose ──────────────────────────────────────────────────────────
+
+sub.add_parser("compose", help="Compose/flatten the current design.")
+
+
+# ── poster export ───────────────────────────────────────────────────────────
+
+p_export = sub.add_parser("export", help="Export the design.")
+p_export.add_argument("--format", "-f", default="png", choices=["png", "pdf"],
+                      help="Export format (default: png)")
+
+
+# ── poster batch ─────────────────────────────────────────────────────────────
+
+sub.add_parser("batch", help="Apply a batch of operations from a JSON file.").add_argument(
+    "file", help="JSON file containing operations array."
+)
+
+
+# ── poster upload ───────────────────────────────────────────────────────────
+
+sub.add_parser("upload", help="Upload an image file to the server.").add_argument(
+    "filepath", help="Path to the image file."
+)
+
+
+# ── poster load ─────────────────────────────────────────────────────────────
+
+sub.add_parser("load", help="Load state from a JSON file.").add_argument(
+    "filepath", help="Path to the state JSON file."
+)
+
+
+# ── poster save ─────────────────────────────────────────────────────────────
+
+sub.add_parser("save", help="Save current state to a JSON file.").add_argument(
+    "filepath", help="Output file path."
+)
+
+
+# ── Main ─────────────────────────────────────────────────────────────────────
+
+def _fmt_state(state: dict, json_out: bool) -> str:
+    if json_out:
+        return ""
+    meta = state.get("meta", {})
+    w, h = meta.get("width_mm", "?"), meta.get("height_mm", "?")
+    elements = state.get("elements", [])
+    return f"State: {meta.get('template', '?')} ({w}×{h}mm), {len(elements)} element(s)"
+
+
+def _fmt_element(res: dict, json_out: bool) -> str:
+    if json_out:
+        return ""
+    # API returns [element, status_code] for element creation
+    if isinstance(res, list):
+        el = res[0] if len(res) > 0 else {}
+    else:
+        el = res.get("element", res)
+    el_type = el.get("type", "?")
+    el_id = el.get("id", "?")
+    content = el.get("content", el.get("src", el.get("shapeType", "")))
+    pos = el.get("position", {})
+    x, y = pos.get("x", 0), pos.get("y", 0)
+    return f"✅ Element {el_id} added: '{content}' ({el_type}) at ({x}, {y})"
+
+
+def main():
+    args = parser.parse_args()
+    cli = PosterCLI(server_url=args.server)
+
+    try:
+        cmd = args.command
+
+        # ── State ──────────────────────────────────────────────────────────────
+        if cmd == "state":
+            state = cli.get_state()
+            if args.json:
+                out("", json_output=True, data=state)
+            else:
+                out(_fmt_state(state, False))
+                for el in state.get("elements", []):
+                    pos = el.get("position", {})
+                    out(f"  • {el.get('id')} [{el.get('type')}] '{el.get('content', el.get('src', ''))}' "
+                        f"@ ({pos.get('x',0)}, {pos.get('y',0)})")
+
+        # ── New ───────────────────────────────────────────────────────────────
+        elif cmd == "new":
+            res = cli.new_design(args.template)
+            if args.json:
+                out("", json_output=True, data=res)
+            else:
+                out(f"✅ New design created: {args.template}")
+
+        # ── Add-text ──────────────────────────────────────────────────────────
+        elif cmd == "add-text":
+            font_weight = args.font_weight
+            if args.bold:
+                font_weight = "bold"
+            res = cli.add_text(
+                args.content, args.x, args.y,
+                **{
+                    "width": args.width,
+                    "height": args.height,
+                    "font-size": args.font_size,
+                    "font-weight": font_weight,
+                    "font-family": args.font_family,
+                    "color": args.color,
+                    "text-align": args.text_align,
+                    "line-height": args.line_height,
+                    "letter-spacing": args.letter_spacing,
+                    "rotation": args.rotation,
+                    "layer": args.layer,
+                    "locked": args.locked,
+                    "visible": args.visible,
+                },
+            )
+            if args.json:
+                out("", json_output=True, data=res)
+            else:
+                out(_fmt_element(res, False))
+
+        # ── Add-image ──────────────────────────────────────────────────────────
+        elif cmd == "add-image":
+            res = cli.add_image(
+                args.src, args.x, args.y,
+                **{
+                    "width": args.width,
+                    "height": args.height,
+                    "rotation": args.rotation,
+                    "layer": args.layer,
+                    "locked": args.locked,
+                    "visible": args.visible,
+                },
+            )
+            if args.json:
+                out("", json_output=True, data=res)
+            else:
+                out(_fmt_element(res, False))
+
+        # ── Add-shape ──────────────────────────────────────────────────────────
+        elif cmd == "add-shape":
+            res = cli.add_shape(
+                args.shape_type, args.x, args.y, args.width, args.height,
+                **{
+                    "fill": args.fill,
+                    "stroke": args.stroke,
+                    "stroke-width": args.stroke_width,
+                    "rotation": args.rotation,
+                    "layer": args.layer,
+                    "locked": args.locked,
+                    "visible": args.visible,
+                },
+            )
+            if args.json:
+                out("", json_output=True, data=res)
+            else:
+                out(_fmt_element(res, False))
+
+        # ── Update ─────────────────────────────────────────────────────────────
+        elif cmd == "update":
+            # Build kwargs from provided args
+            kwargs = {}
+            if args.content is not None:
+                kwargs["content"] = args.content
+            if args.x is not None:
+                kwargs["position.x"] = args.x
+            if args.y is not None:
+                kwargs["position.y"] = args.y
+            if args.width is not None:
+                kwargs["width"] = args.width
+            if args.height is not None:
+                kwargs["height"] = args.height
+            if args.font_size is not None:
+                kwargs["style.fontSize"] = args.font_size
+            if args.font_weight is not None:
+                kwargs["style.fontWeight"] = args.font_weight
+            if args.font_family is not None:
+                kwargs["style.fontFamily"] = args.font_family
+            if args.color is not None:
+                kwargs["style.color"] = args.color
+            if args.text_align is not None:
+                kwargs["style.textAlign"] = args.text_align
+            if args.line_height is not None:
+                kwargs["style.lineHeight"] = args.line_height
+            if args.letter_spacing is not None:
+                kwargs["style.letterSpacing"] = args.letter_spacing
+            if args.rotation is not None:
+                kwargs["rotation"] = args.rotation
+            if args.layer is not None:
+                kwargs["layer"] = args.layer
+            if args.locked is not None:
+                kwargs["locked"] = args.locked
+            if args.visible is not None:
+                kwargs["visible"] = args.visible
+
+            res = cli.update_element(args.element_id, **kwargs)
+            if args.json:
+                out("", json_output=True, data=res)
+            else:
+                out(f"✅ Element {args.element_id} updated.")
+
+        # ── Remove ────────────────────────────────────────────────────────────
+        elif cmd == "remove":
+            res = cli.remove_element(args.element_id)
+            if args.json:
+                out("", json_output=True, data=res)
+            else:
+                out(f"✅ Element {args.element_id} removed.")
+
+        # ── Reorder ───────────────────────────────────────────────────────────
+        elif cmd == "reorder":
+            res = cli.reorder_layers(args.element_ids)
+            if args.json:
+                out("", json_output=True, data=res)
+            else:
+                out(f"✅ Layers reordered: {' → '.join(args.element_ids)}")
+
+        # ── Set-bg ─────────────────────────────────────────────────────────────
+        elif cmd == "set-bg":
+            kwargs = {}
+            if args.color:
+                kwargs["color"] = args.color
+            if args.type:
+                kwargs["type"] = args.type
+            if args.gradient_angle:
+                kwargs["gradientAngle"] = args.gradient_angle
+            if args.gradient_start:
+                kwargs["gradientStart"] = args.gradient_start
+            if args.gradient_end:
+                kwargs["gradientEnd"] = args.gradient_end
+            if args.image_url:
+                kwargs["imageUrl"] = args.image_url
+
+            res = cli.set_background(**kwargs)
+            if args.json:
+                out("", json_output=True, data=res)
+            else:
+                out(f"✅ Background set.")
+
+        # ── Undo ───────────────────────────────────────────────────────────────
+        elif cmd == "undo":
+            res = cli.undo()
+            if args.json:
+                out("", json_output=True, data=res)
+            else:
+                undone = res.get("undone", "?")
+                out(f"✅ Undone: {undone}")
+
+        # ── History ────────────────────────────────────────────────────────────
+        elif cmd == "history":
+            res = cli.get_history(args.limit)
+            if args.json:
+                out("", json_output=True, data=res)
+            else:
+                entries = res.get("history", [])
+                if not entries:
+                    out("No history entries.")
+                for entry in entries:
+                    out(f"  [{entry.get('timestamp', '')}] {entry.get('command', '?')}")
+
+        # ── Templates ─────────────────────────────────────────────────────────
+        elif cmd == "templates":
+            res = cli.list_templates()
+            if args.json:
+                out("", json_output=True, data=res)
+            else:
+                templates = res.get("templates", [])
+                for t in templates:
+                    out(f"  • {t.get('name')} — {t.get('description', '')}")
+
+        # ── Compose ─────────────────────────────────────────────────────────────
+        elif cmd == "compose":
+            res = cli.compose()
+            if args.json:
+                out("", json_output=True, data=res)
+            else:
+                out(f"✅ Design composed.")
+
+        # ── Export ──────────────────────────────────────────────────────────────
+        elif cmd == "export":
+            res = cli.export(args.format)
+            if args.json:
+                out("", json_output=True, data=res)
+            else:
+                out(f"✅ Exported as {args.format}: {res.get('path', '')}")
+
+        # ── Batch ───────────────────────────────────────────────────────────────
+        elif cmd == "batch":
+            res = cli.batch(args.file)
+            if args.json:
+                out("", json_output=True, data=res)
+            else:
+                count = res.get("applied", 0)
+                out(f"✅ Applied {count} batch operation(s).")
+
+        # ── Upload ─────────────────────────────────────────────────────────────
+        elif cmd == "upload":
+            res = cli.upload(args.filepath)
+            if args.json:
+                out("", json_output=True, data=res)
+            else:
+                out(f"✅ Uploaded: {res.get('url', args.filepath)}")
+
+        # ── Load ───────────────────────────────────────────────────────────────
+        elif cmd == "load":
+            res = cli.load(args.filepath)
+            if args.json:
+                out("", json_output=True, data=res)
+            else:
+                out(f"✅ State loaded from {args.filepath}")
+
+        # ── Save ───────────────────────────────────────────────────────────────
+        elif cmd == "save":
+            res = cli.save(args.filepath)
+            if args.json:
+                out("", json_output=True, data=res)
+            else:
+                out(f"✅ State saved to {args.filepath}")
+
+        else:
+            fatal(f"Unknown command: {cmd}")
+
+    except PosterAPIError as e:
+        fatal(f"Server error: {e.message}")
+    except FileNotFoundError as e:
+        fatal(f"File not found: {e}")
+    except json.JSONDecodeError as e:
+        fatal(f"Invalid JSON: {e}")
+    except Exception as e:
+        fatal(f"Unexpected error: {e}")
+
+
+if __name__ == "__main__":
+    main()
