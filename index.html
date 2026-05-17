@@ -1,0 +1,2425 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0D1117">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Poster Designer</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+  <link href="https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.css" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0D1117;
+      --surface: #161B22;
+      --surface2: #21262D;
+      --border: #30363D;
+      --text: #E6EDF3;
+      --text-dim: #8B949E;
+      --accent: #58A6FF;
+      --danger: #F85149;
+      --top-h: 44px;
+      --bottom-h: 56px;
+      --ctx-h: 44px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    /* ── Layout ── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      height: 100dvh;
+    }
+
+    /* ── Top bar ── */
+    #top-bar {
+      height: var(--top-h);
+      padding-top: var(--safe-top);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    #top-bar .title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 18px;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .icon-btn:active { background: var(--surface2); }
+    .icon-btn:disabled { opacity: 0.4; pointer-events: none; }
+    .top-left, .top-right { display: flex; align-items: center; }
+
+    /* ── Canvas area ── */
+    #canvas-wrap {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      background: var(--bg);
+      touch-action: none;
+    }
+    #poster-canvas {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform-origin: center center;
+      touch-action: none;
+    }
+
+    /* ── Contextual toolbar ── */
+    #ctx-bar {
+      height: var(--ctx-h);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 12px;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    #ctx-bar.visible { display: flex; }
+    .ctx-label {
+      font-size: 12px;
+      color: var(--text-dim);
+      min-width: 40px;
+    }
+    .ctx-slider {
+      -webkit-appearance: none;
+      width: 120px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      outline: none;
+    }
+    .ctx-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+    .ctx-color {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      padding: 0;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .ctx-color input { opacity: 0; width: 200%; height: 200%; margin: -50%; cursor: pointer; }
+
+    /* ── Bottom toolbar ── */
+    #bottom-bar {
+      height: calc(var(--bottom-h) + var(--safe-bottom));
+      padding-bottom: var(--safe-bottom);
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .tool-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      min-width: 52px;
+      height: 52px;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 20px;
+      cursor: pointer;
+      border-radius: 10px;
+      transition: background 0.15s;
+      padding: 0 4px;
+    }
+    .tool-btn span {
+      font-size: 10px;
+      color: var(--text-dim);
+      line-height: 1;
+    }
+    .tool-btn:active { background: var(--surface2); }
+
+    /* ── Error banner ── */
+    #error-banner {
+      position: fixed;
+      top: calc(var(--top-h) + var(--safe-top) + 8px);
+      left: 12px;
+      right: 12px;
+      background: var(--danger);
+      color: #fff;
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      display: none;
+      z-index: 100;
+      align-items: center;
+      gap: 8px;
+    }
+    #error-banner.visible { display: flex; }
+
+    /* ── Loading overlay ── */
+    #loading {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 200;
+      transition: opacity 0.3s;
+    }
+    #loading.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── More menu overlay ── */
+    #menu-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      z-index: 50;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    #menu-overlay.visible { display: flex; }
+    #menu-sheet {
+      background: var(--surface);
+      border-radius: 16px 16px 0 0;
+      width: 100%;
+      max-width: 400px;
+      padding: 8px 0 calc(var(--safe-bottom) + 16px);
+    }
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 20px;
+      font-size: 15px;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .menu-item:active { background: var(--surface2); }
+    .menu-item.danger { color: var(--danger); }
+    .menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+    /* ── Shape picker ── */
+    #shape-picker {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      z-index: 60;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    #shape-picker.visible { display: flex; }
+    #shape-sheet {
+      background: var(--surface);
+      border-radius: 16px 16px 0 0;
+      width: 100%;
+      max-width: 400px;
+      max-height: 360px;
+      overflow-y: auto;
+      padding: 8px 0 calc(var(--safe-bottom) + 16px);
+    }
+    .shape-category {
+      border-bottom: 1px solid var(--border);
+    }
+    .shape-category:last-child { border-bottom: none; }
+    .shape-category-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-dim);
+      user-select: none;
+    }
+    .shape-category-header:hover { color: var(--text); }
+    .shape-category-chevron {
+      transition: transform 0.2s ease;
+      font-size: 10px;
+    }
+    .shape-category.collapsed .shape-category-chevron { transform: rotate(-90deg); }
+    .shape-category-items {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      padding: 4px 12px 12px;
+    }
+    .shape-category.collapsed .shape-category-items { display: none; }
+    .shape-opt {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding: 10px 4px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+      background: var(--surface2);
+    }
+    .shape-opt:hover { background: var(--border); }
+    .shape-opt:active { background: var(--accent); }
+    .shape-opt-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
+    .shape-opt-icon svg { width: 24px; height: 24px; }
+    .shape-opt-label { font-size: 10px; color: var(--text-dim); text-align: center; }
+    .shape-opt:hover .shape-opt-label { color: var(--text); }
+
+    /* ── Delete button ── */
+    #delete-btn {
+      background: none;
+      border: none;
+      color: var(--danger);
+      font-size: 16px;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+    }
+    #delete-btn:active { background: rgba(248, 81, 73, 0.15); }
+
+    /* ── Connection status ── */
+    .conn-status {
+      font-size: 12px;
+      margin-left: 6px;
+      opacity: 0.8;
+    }
+
+    /* ── Agent editing badge ── */
+    .agent-badge {
+      font-size: 12px;
+      color: var(--accent);
+      background: rgba(88, 166, 255, 0.12);
+      border: 1px solid rgba(88, 166, 255, 0.3);
+      border-radius: 12px;
+      padding: 2px 10px;
+      margin-left: 8px;
+      white-space: nowrap;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── Synced flash ── */
+    #sync-flash {
+      position: fixed;
+      top: calc(var(--top-h) + var(--safe-top) + 8px);
+      right: 12px;
+      background: rgba(88, 166, 255, 0.9);
+      color: #fff;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      display: none;
+      z-index: 100;
+      pointer-events: none;
+    }
+    #sync-flash.visible { display: block; animation: flashFade 1.5s ease forwards; }
+    @keyframes flashFade { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
+
+    /* ── Image picker ── */
+    #image-picker {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      z-index: 60;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    #image-picker.visible { display: flex; }
+    #image-sheet {
+      background: var(--surface);
+      border-radius: 16px 16px 0 0;
+      width: 100%;
+      max-width: 400px;
+      padding: 8px 0 calc(var(--safe-bottom) + 16px);
+    }
+    .img-option {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 20px;
+      font-size: 15px;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .img-option:active { background: var(--surface2); }
+    .img-option-icon { font-size: 20px; }
+
+    /* ── Context bar text controls ── */
+    .ctx-style-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .ctx-style-btn:active { background: var(--surface2); }
+    .ctx-style-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .ctx-font-select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 13px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      outline: none;
+      min-width: 110px;
+    }
+    .ctx-font-select:focus { border-color: var(--accent); }
+    .ctx-align-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .ctx-align-btn:active { background: var(--surface2); }
+    .ctx-align-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    /* ── BG picker ── */
+    #bg-picker {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      z-index: 60;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    #bg-picker.visible { display: flex; }
+    #bg-sheet {
+      background: var(--surface);
+      border-radius: 16px 16px 0 0;
+      width: 100%;
+      max-width: 400px;
+      padding: 0 0 calc(var(--safe-bottom) + 16px);
+    }
+    .sheet-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+    .sheet-tab {
+      flex: 1;
+      padding: 12px;
+      text-align: center;
+      font-size: 14px;
+      color: var(--text-dim);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s;
+    }
+    .sheet-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .sheet-tab:active { background: var(--surface2); }
+    .sheet-panel { display: none; padding: 16px; }
+    .sheet-panel.active { display: block; }
+
+    .color-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .color-row input[type="color"] {
+      width: 48px;
+      height: 48px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      background: none;
+      padding: 0;
+    }
+    .swatch-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .swatch {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 2px solid var(--border);
+      transition: transform 0.15s;
+    }
+    .swatch:active { transform: scale(0.92); }
+    .swatch.selected { border-color: var(--accent); }
+    .quick-presets {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .preset-btn {
+      flex: 1;
+      padding: 8px 4px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 12px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .preset-btn:active { background: var(--border); }
+
+    .grad-type-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .grad-type-btn {
+      flex: 1;
+      padding: 8px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-dim);
+      font-size: 13px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .grad-type-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .angle-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .angle-row label { font-size: 12px; color: var(--text-dim); min-width: 50px; }
+    .angle-row input[type="range"] { flex: 1; }
+    .angle-row span { font-size: 12px; color: var(--text-dim); min-width: 36px; text-align: right; }
+    .stop-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .stop-row label { font-size: 12px; color: var(--text-dim); }
+    .stop-row input[type="color"] { width: 40px; height: 40px; border: none; border-radius: 8px; cursor: pointer; padding: 0; background: none; }
+    .preset-grad-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .preset-grad {
+      flex: 1;
+      height: 48px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: rgba(255,255,255,0.7);
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+      font-weight: 600;
+    }
+    .preset-grad:active { border-color: var(--accent); }
+
+    /* ── Export picker ── */
+    #export-picker {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      display: none;
+      z-index: 60;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    #export-picker.visible { display: flex; }
+    #export-sheet {
+      background: var(--surface);
+      border-radius: 16px 16px 0 0;
+      width: 100%;
+      max-width: 400px;
+      padding: 0 0 calc(var(--safe-bottom) + 16px);
+    }
+    .export-section {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .export-section:last-of-type { border-bottom: none; }
+    .export-label {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .format-cards {
+      display: flex;
+      gap: 8px;
+    }
+    .format-card {
+      flex: 1;
+      padding: 10px 6px;
+      background: var(--surface2);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text);
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .format-card:active { background: var(--border); }
+    .format-card.selected { border-color: var(--accent); color: var(--accent); }
+    .size-btns {
+      display: flex;
+      gap: 8px;
+    }
+    .size-btn {
+      flex: 1;
+      padding: 8px 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text);
+      line-height: 1.3;
+    }
+    .size-btn:active { background: var(--border); }
+    .size-btn.selected { border-color: var(--accent); color: var(--accent); }
+    .size-btn .size-sub { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+    .dpi-btns {
+      display: flex;
+      gap: 8px;
+    }
+    .dpi-btn {
+      flex: 1;
+      padding: 8px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .dpi-btn:active { background: var(--border); }
+    .dpi-btn.selected { border-color: var(--accent); color: var(--accent); }
+    #quality-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #quality-row label { font-size: 12px; color: var(--text-dim); min-width: 50px; }
+    #quality-row input[type="range"] { flex: 1; }
+    #quality-row span { font-size: 12px; color: var(--text-dim); min-width: 30px; }
+    .export-do-btn {
+      margin: 12px 16px 0;
+      width: calc(100% - 32px);
+      padding: 14px;
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .export-do-btn:active { opacity: 0.85; }
+  </style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="loading">
+  <div class="spinner"></div>
+  <div style="color:var(--text-dim);font-size:13px;">Connecting to server…</div>
+</div>
+
+<!-- Error banner -->
+<div id="error-banner">
+  <span>⚠️</span><span id="error-msg">Server unreachable</span>
+</div>
+
+<!-- Sync flash indicator -->
+<div id="sync-flash">✓ Synced</div>
+
+<div id="app">
+  <!-- Top bar -->
+  <header id="top-bar">
+    <div class="top-left">
+      <button class="icon-btn" id="btn-back" title="Back">⇦</button>
+      <span class="title" id="doc-title">Poster Designer</span>
+      <span id="conn-status" class="conn-status" title="Connection status">🔴</span>
+      <span id="agent-badge" class="agent-badge" style="display:none">✏️ Nexi is editing…</span>
+    </div>
+    <div class="top-right">
+      <button class="icon-btn" id="btn-undo" title="Undo (↩)">↩</button>
+      <button class="icon-btn" id="btn-redo" title="Redo (↪)" disabled>↪</button>
+    </div>
+  </header>
+
+  <!-- Canvas -->
+  <div id="canvas-wrap">
+    <canvas id="poster-canvas"></canvas>
+  </div>
+
+  <!-- Contextual toolbar (shown when element selected) -->
+  <div id="ctx-bar">
+    <button class="icon-btn" id="ctx-delete" title="Delete">🗑</button>
+    <span class="ctx-label" id="ctx-label">Size</span>
+    <input type="range" class="ctx-slider" id="ctx-size" min="8" max="200" value="24">
+    <span class="ctx-label" id="ctx-label2">Color</span>
+    <div class="ctx-color" id="ctx-color-wrap">
+      <input type="color" id="ctx-color" value="#ffffff">
+    </div>
+    <span class="ctx-label" id="ctx-op-label" style="display:none">Opacity</span>
+    <input type="range" class="ctx-slider" id="ctx-opacity" min="0" max="100" value="100" style="display:none;width:80px;">
+    <button class="icon-btn" id="ctx-bring-fwd" title="Bring Forward" style="display:none">⬆</button>
+    <button class="icon-btn" id="ctx-send-back" title="Send Backward" style="display:none">⬇</button>
+    <div id="ctx-text-options" style="display:none;align-items:center;gap:6px;">
+      <select class="ctx-font-select" id="ctx-font-family">
+        <option value="Noto Sans">Noto Sans</option>
+        <option value="Arial">Arial</option>
+        <option value="Georgia">Georgia</option>
+        <option value="Times New Roman">Times New Roman</option>
+        <option value="Courier New">Courier New</option>
+        <option value="Impact">Impact</option>
+        <option value="Verdana">Verdana</option>
+        <option value="Comic Sans MS">Comic Sans MS</option>
+      </select>
+      <button class="ctx-style-btn" data-style="bold" title="Bold"><b>B</b></button>
+      <button class="ctx-style-btn" data-style="italic" title="Italic"><i>I</i></button>
+      <button class="ctx-style-btn" data-style="underline" title="Underline"><u>U</u></button>
+      <button class="ctx-align-btn" data-align="left">≡</button>
+      <button class="ctx-align-btn" data-align="center">≡</button>
+      <button class="ctx-align-btn" data-align="right">≡</button>
+      <span class="ctx-label">Spacing</span>
+      <input type="range" class="ctx-slider" id="ctx-letter-spacing" min="-2" max="10" value="0">
+    </div>
+  </div>
+
+  <!-- Bottom toolbar -->
+  <nav id="bottom-bar">
+    <button class="tool-btn" id="btn-image" title="Add Image">
+      🖼️<span>Image</span>
+    </button>
+    <button class="tool-btn" id="btn-text" title="Add Text">
+      📝<span>Text</span>
+    </button>
+    <button class="tool-btn" id="btn-shape" title="Add Shape">
+      ⬡<span>Shape</span>
+    </button>
+    <button class="tool-btn" id="btn-bg" title="Background">
+      🎨<span>BG</span>
+    </button>
+    <button class="tool-btn" id="btn-export" title="Export">
+      ⬇️<span>Export</span>
+    </button>
+    <button class="tool-btn" id="btn-more" title="More">
+      ☰<span>More</span>
+    </button>
+  </nav>
+</div>
+
+<!-- More menu -->
+<div id="menu-overlay">
+  <div id="menu-sheet">
+    <div class="menu-item" id="menu-templates">📋 Templates</div>
+    <div class="menu-divider"></div>
+    <div class="menu-item" id="menu-about">ℹ️ About</div>
+    <div class="menu-divider"></div>
+    <div class="menu-item danger" id="menu-reset">🔄 New Design</div>
+  </div>
+</div>
+
+<!-- Shape picker -->
+<div id="shape-picker">
+  <div id="shape-sheet">
+    <!-- Categories rendered by JS -->
+  </div>
+</div>
+
+<!-- Image picker -->
+<div id="image-picker">
+  <div id="image-sheet">
+    <div class="img-option" id="img-upload">
+      <span class="img-option-icon">📁</span>
+      <span>Upload from Device</span>
+    </div>
+    <div class="img-option" id="img-url">
+      <span class="img-option-icon">🔗</span>
+      <span>Import from URL</span>
+    </div>
+  </div>
+</div>
+
+<!-- BG picker -->
+<div id="bg-picker">
+  <div id="bg-sheet">
+    <div class="sheet-tabs">
+      <div class="sheet-tab active" data-tab="solid">Solid Color</div>
+      <div class="sheet-tab" data-tab="gradient">Gradient</div>
+    </div>
+    <div id="bg-solid-panel" class="sheet-panel active">
+      <div class="color-row">
+        <input type="color" id="bg-color-input" value="#0D1117">
+        <div>
+          <div style="font-size:13px;color:var(--text);margin-bottom:4px;">Pick a color</div>
+          <div style="font-size:11px;color:var(--text-dim);">Or choose a preset below</div>
+        </div>
+      </div>
+      <div class="swatch-row">
+        <div class="swatch" style="background:#0D1117" data-color="#0D1117"></div>
+        <div class="swatch" style="background:#1a1a2e" data-color="#1a1a2e"></div>
+        <div class="swatch" style="background:#16213e" data-color="#16213e"></div>
+        <div class="swatch" style="background:#0f3460" data-color="#0f3460"></div>
+        <div class="swatch" style="background:#533483" data-color="#533483"></div>
+        <div class="swatch" style="background:#e94560" data-color="#e94560"></div>
+      </div>
+      <div class="quick-presets">
+        <div class="preset-btn" data-color="#ffffff">White</div>
+        <div class="preset-btn" data-color="#000000">Black</div>
+        <div class="preset-btn" data-color="#F85149">Red</div>
+        <div class="preset-btn" data-color="#58A6FF">Blue</div>
+        <div class="preset-btn" data-color="#3FB950">Green</div>
+      </div>
+      <button class="export-do-btn" id="bg-apply-btn" style="margin-top:16px;">Apply Background</button>
+    </div>
+    <div id="bg-gradient-panel" class="sheet-panel">
+      <div class="grad-type-row">
+        <div class="grad-type-btn active" data-type="linear">Linear</div>
+        <div class="grad-type-btn" data-type="radial">Radial</div>
+      </div>
+      <div id="angle-row" class="angle-row">
+        <label>Angle</label>
+        <input type="range" id="grad-angle" min="0" max="360" value="45">
+        <span id="grad-angle-val">45°</span>
+      </div>
+      <div class="stop-row">
+        <label>Color 1</label>
+        <input type="color" id="grad-stop1" value="#ff6b6b">
+        <label>Color 2</label>
+        <input type="color" id="grad-stop2" value="#c44dff">
+      </div>
+      <div class="export-label" style="margin-top:8px;">Presets</div>
+      <div class="preset-grad-row">
+        <div class="preset-grad" data-stops='["#ff6b6b","#c44dff"]' data-angle="45" style="background:linear-gradient(135deg,#ff6b6b,#c44dff)">Sunset</div>
+        <div class="preset-grad" data-stops='["#4facfe","#00f2fe"]' data-angle="135" style="background:linear-gradient(135deg,#4facfe,#00f2fe)">Ocean</div>
+        <div class="preset-grad" data-stops='["#11998e","#38ef7d"]' data-angle="90" style="background:linear-gradient(135deg,#11998e,#38ef7d)">Forest</div>
+      </div>
+      <button class="export-do-btn" id="bg-grad-apply-btn" style="margin-top:16px;">Apply Gradient</button>
+    </div>
+  </div>
+</div>
+
+<!-- Export picker -->
+<div id="export-picker">
+  <div id="export-sheet">
+    <div class="export-section">
+      <div class="export-label">Format</div>
+      <div class="format-cards">
+        <div class="format-card selected" data-format="png">PNG</div>
+        <div class="format-card" data-format="jpeg">JPEG</div>
+        <div class="format-card" data-format="pdf">PDF</div>
+        <div class="format-card" data-format="svg">SVG</div>
+      </div>
+    </div>
+    <div class="export-section" id="quality-row">
+      <div class="export-label">Quality</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <label style="font-size:12px;color:var(--text-dim);min-width:50px;">JPEG</label>
+        <input type="range" id="export-quality" min="1" max="100" value="90">
+        <span id="export-quality-val" style="font-size:12px;color:var(--text-dim);min-width:30px;">90%</span>
+      </div>
+    </div>
+    <div class="export-section">
+      <div class="export-label">Size Preset</div>
+      <div class="size-btns">
+        <div class="size-btn selected" data-size="original">
+          Original
+          <div class="size-sub" id="size-orig-sub">—</div>
+        </div>
+        <div class="size-btn" data-size="square">
+          Square
+          <div class="size-sub">1080×1080</div>
+        </div>
+        <div class="size-btn" data-size="story">
+          Story
+          <div class="size-sub">1080×1920</div>
+        </div>
+      </div>
+    </div>
+    <div class="export-section">
+      <div class="export-label">DPI</div>
+      <div class="dpi-btns">
+        <div class="dpi-btn" data-dpi="72">72</div>
+        <div class="dpi-btn" data-dpi="150">150</div>
+        <div class="dpi-btn selected" data-dpi="300">300</div>
+      </div>
+    </div>
+    <button class="export-do-btn" id="export-do-btn">⬇️ Export Poster</button>
+  </div>
+</div>
+
+<input type="file" accept="image/*" id="image-file-input" style="display:none">
+
+<script src="https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+
+// =============================================================================
+// Supabase Configuration
+// =============================================================================
+var SUPABASE_URL = 'https://ojfvfzchbwmqzlrcjljn.supabase.co';
+var SUPABASE_ANON_KEY = 'sb_publishable_moTE43Oy_7xML4NCGoncxw_JCeVrTzW';
+var supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// =============================================================================
+// Server URL — use window.location.origin for Vercel
+// =============================================================================
+var SERVER = window.location.origin;
+
+// =============================================================================
+// DPI / unit conversion
+// =============================================================================
+var DPI = 300;
+var MM_PER_INCH = 25.4;
+function mmToPx(mm) { return mm * DPI / MM_PER_INCH; }
+function pxToMm(px) { return px / DPI * MM_PER_INCH; }
+
+// =============================================================================
+// Shape library — all shapes with SVG icons + fabric.js factory
+// =============================================================================
+var SHAPES = {
+  // ── BASIC ──────────────────────────────────────────────────────────────────
+  rect: {
+    label: 'Rectangle', category: 'Basic', emoji: '🟪',
+    svg: `<rect x="4" y="6" width="20" height="14" rx="2" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Rect({
+      left: x, top: y, width: w, height: h,
+      fill: style.fillColor || style.color || '#58A6FF',
+      originX: 'left', originY: 'top', angle, rx: 4, ry: 4,
+    }),
+  },
+  circle: {
+    label: 'Circle', category: 'Basic', emoji: '⭕',
+    svg: `<circle cx="14" cy="14" r="10" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Circle({
+      left: x, top: y, radius: Math.min(w, h) / 2,
+      fill: style.fillColor || style.color || '#58A6FF',
+      originX: 'left', originY: 'top', angle,
+    }),
+  },
+  triangle: {
+    label: 'Triangle', category: 'Basic', emoji: '🔺',
+    svg: `<polygon points="14,2 26,26 2,26" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Triangle({
+      left: x, top: y, width: w, height: h,
+      fill: style.fillColor || style.color || '#58A6FF',
+      originX: 'left', originY: 'top', angle,
+    }),
+  },
+  line: {
+    label: 'Line', category: 'Basic', emoji: '➖',
+    svg: `<line x1="2" y1="14" x2="26" y2="14" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Line([x, y, x + w, y], {
+      stroke: style.strokeColor || style.color || '#58A6FF',
+      strokeWidth: style.strokeWidth || 3,
+    }),
+  },
+  star: {
+    label: 'Star', category: 'Basic', emoji: '⭐',
+    svg: `<polygon points="14,1 17.5,9 26,9 19.5,14.5 22,23 14,18 6,23 8.5,14.5 2,9 10.5,9" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path(
+      'M0,-50 L12,-18 L47,-15 L21,9 L29,42 L0,24 L-29,42 L-21,9 L-47,-15 L-12,-18 Z', {
+        left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      }
+    ),
+  },
+  pentagon: {
+    label: 'Pentagon', category: 'Basic', emoji: '⬠',
+    svg: `<polygon points="14,1 26,9 22,25 6,25 2,9" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path(
+      'M0,-50 L48,-15 L29,41 L-29,41 L-48,-15 Z', {
+        left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      }
+    ),
+  },
+  hexagon: {
+    label: 'Hexagon', category: 'Basic', emoji: '⬡',
+    svg: `<polygon points="14,1 25,7 25,21 14,27 3,21 3,7" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path(
+      'M0,-50 L43,-25 L43,25 L0,50 L-43,25 L-43,-25 Z', {
+        left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      }
+    ),
+  },
+  octagon: {
+    label: 'Octagon', category: 'Basic', emoji: '🟧',
+    svg: `<polygon points="7,1 21,1 27,7 27,21 21,27 7,27 1,21 1,7" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path(
+      'M-21,-50 L21,-50 L50,-21 L50,21 L21,50 L-21,50 L-50,21 L-50,-21 Z', {
+        left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      }
+    ),
+  },
+  diamond: {
+    label: 'Diamond', category: 'Basic', emoji: '🔷',
+    svg: `<polygon points="14,1 27,14 14,27 1,14" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path(
+      'M0,-50 L40,0 L0,50 L-40,0 Z', {
+        left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      }
+    ),
+  },
+  parallelogram: {
+    label: 'Parallelogram', category: 'Basic', emoji: '▱',
+    svg: `<polygon points="5,5 25,5 20,23 0,23" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path(
+      'M-40,-30 L50,-30 L40,30 L-50,30 Z', {
+        left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      }
+    ),
+  },
+  trapezoid: {
+    label: 'Trapezoid', category: 'Basic', emoji: '🔷',
+    svg: `<polygon points="3,7 25,7 20,25 8,25" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path(
+      'M-50,-35 L50,-35 L35,35 L-35,35 Z', {
+        left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      }
+    ),
+  },
+  'triangle-right': {
+    label: 'Triangle R', category: 'Basic', emoji: '▶',
+    svg: `<polygon points="4,4 24,14 4,24" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path(
+      'M-50,-40 L40,-40 L40,40 L-50,-40 Z', {
+        left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      }
+    ),
+  },
+
+  // ── ARROWS ─────────────────────────────────────────────────────────────────
+  'arrow-right': {
+    label: 'Arrow →', category: 'Arrows', emoji: '➡',
+    svg: `<polygon points="1,14 21,14 21,6 28,14 21,22 21,14" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path(
+      'M-50,0 L30,0 L30,-25 L60,0 L30,25 L30,0 Z', {
+        left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      }
+    ),
+  },
+  'arrow-left': {
+    label: 'Arrow ←', category: 'Arrows', emoji: '⬅',
+    svg: `<polygon points="27,14 7,14 7,6 0,14 7,22 7,14" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path(
+      'M50,0 L-30,0 L-30,-25 L-60,0 L-30,25 L-30,0 Z', {
+        left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      }
+    ),
+  },
+  'arrow-up': {
+    label: 'Arrow ↑', category: 'Arrows', emoji: '⬆',
+    svg: `<polygon points="14,1 14,21 6,21 14,28 22,21 14,21" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path(
+      'M0,50 L0,-30 L-25,-30 L0,-60 L25,-30 L0,-30 Z', {
+        left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      }
+    ),
+  },
+  'arrow-down': {
+    label: 'Arrow ↓', category: 'Arrows', emoji: '⬇',
+    svg: `<polygon points="14,27 14,7 6,7 14,0 22,7 14,7" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path(
+      'M0,-50 L0,30 L-25,30 L0,60 L25,30 L0,30 Z', {
+        left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      }
+    ),
+  },
+  'chevron-right': {
+    label: 'Chevron →', category: 'Arrows', emoji: '›',
+    svg: `<polyline points="4,5 20,14 4,23" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path(
+      'M-30,-40 L10,-40 L50,0 L10,40 L-30,40 L-50,0 Z', {
+        left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+        fill: 'transparent',
+        stroke: style.strokeColor || style.color || '#58A6FF',
+        strokeWidth: 3, strokeLineCap: 'round', strokeLineJoin: 'round',
+        originX: 'left', originY: 'top', angle,
+      }
+    ),
+  },
+  'chevron-left': {
+    label: 'Chevron ←', category: 'Arrows', emoji: '‹',
+    svg: `<polyline points="24,5 8,14 24,23" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path(
+      'M30,-40 L-10,-40 L-50,0 L-10,40 L30,40 L50,0 Z', {
+        left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+        fill: 'transparent',
+        stroke: style.strokeColor || style.color || '#58A6FF',
+        strokeWidth: 3, strokeLineCap: 'round', strokeLineJoin: 'round',
+        originX: 'left', originY: 'top', angle,
+      }
+    ),
+  },
+
+  // ── SYMBOLS ────────────────────────────────────────────────────────────────
+  heart: {
+    label: 'Heart', category: 'Symbols', emoji: '❤️',
+    svg: `<path d="M14,26 C14,26 2,16 2,9 C2,3 7,1 11,4 C13,5.5 14,7.5 14,7.5 C14,7.5 15,5.5 17,4 C21,1 26,3 26,9 C26,16 14,26 14,26Z" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path(
+      'M0,35 C0,35 -50,-15 -50,-30 C-50,-50 -25,-50 0,-30 C25,-50 50,-50 50,-30 C50,-15 0,35 0,35 Z', {
+        left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      }
+    ),
+  },
+  cross: {
+    label: 'Cross', category: 'Symbols', emoji: '✚',
+    svg: `<polygon points="10,1 20,1 20,10 29,10 29,1 39,1 39,11 29,20 29,29 20,29 20,39 10,39 10,29 1,20 1,11 10,11" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path(
+      'M-30,-50 L30,-50 L30,-30 L50,-30 L50,30 L30,30 L30,50 L-30,50 L-30,30 L-50,30 L-50,-30 L-30,-30 Z', {
+        left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      }
+    ),
+  },
+  plus: {
+    label: 'Plus', category: 'Symbols', emoji: '➕',
+    svg: `<line x1="14" y1="2" x2="14" y2="26" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="2" y1="14" x2="26" y2="14" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path('M-50,0 L50,0 M0,-50 L0,50', {
+      left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+      fill: 'transparent',
+      stroke: style.strokeColor || style.color || '#58A6FF',
+      strokeWidth: 4, strokeLineCap: 'round',
+      originX: 'left', originY: 'top', angle,
+    }),
+  },
+  minus: {
+    label: 'Minus', category: 'Symbols', emoji: '➖',
+    svg: `<line x1="2" y1="14" x2="26" y2="14" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path('M-50,0 L50,0', {
+      left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+      fill: 'transparent',
+      stroke: style.strokeColor || style.color || '#58A6FF',
+      strokeWidth: 4, strokeLineCap: 'round',
+      originX: 'left', originY: 'top', angle,
+    }),
+  },
+  'bracket-right': {
+    label: 'Bracket ]', category: 'Symbols', emoji: ']',
+    svg: `<polyline points="22,4 8,4 8,24 22,24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path('M20,-50 L-35,-50 L-35,50 L20,50', {
+      left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+      fill: 'transparent',
+      stroke: style.strokeColor || style.color || '#58A6FF',
+      strokeWidth: 4, strokeLineCap: 'round', strokeLineJoin: 'round',
+      originX: 'left', originY: 'top', angle,
+    }),
+  },
+  'bracket-left': {
+    label: 'Bracket [', category: 'Symbols', emoji: '[',
+    svg: `<polyline points="6,4 20,4 20,24 6,24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path('M-20,-50 L35,-50 L35,50 L-20,50', {
+      left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+      fill: 'transparent',
+      stroke: style.strokeColor || style.color || '#58A6FF',
+      strokeWidth: 4, strokeLineCap: 'round', strokeLineJoin: 'round',
+      originX: 'left', originY: 'top', angle,
+    }),
+  },
+
+  // ── NATURE ─────────────────────────────────────────────────────────────────
+  cloud: {
+    label: 'Cloud', category: 'Nature', emoji: '☁',
+    svg: `<path d="M7,22 C3,22 1,18 3,15 C1,10 6,6 12,8 C15,2 23,2 26,8 C32,6 37,11 35,16 L35,24 L3,24 Z" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path(
+      'M-40,20 C-55,20 -60,5 -50,0 C-55,-15 -35,-20 -20,-10 C-10,-25 20,-25 30,-10 C50,-15 55,5 40,20 L40,35 L-40,35 Z', {
+        left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      }
+    ),
+  },
+  moon: {
+    label: 'Moon', category: 'Nature', emoji: '🌙',
+    svg: `<path d="M22,4 C16,4 12,9 14,16 C16,23 23,27 28,24 C20,28 10,20 12,9 C14,0 20,-2 22,4Z" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path(
+      'M20,-45 C40,-45 50,-20 40,5 C50,25 30,45 5,45 C-25,45 -40,15 -30,-15 C-20,-40 0,-45 20,-45 Z', {
+        left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      }
+    ),
+  },
+  sun: {
+    label: 'Sun', category: 'Nature', emoji: '☀',
+    svg: `<line x1="14" y1="1" x2="14" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="14" y1="23" x2="14" y2="27" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="1" y1="14" x2="5" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="23" y1="14" x2="27" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="14" cy="14" r="5" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => {
+      const centerX = x + w / 2, centerY = y + h / 2;
+      const rayLen = w * 0.4;
+      const fill = style.fillColor || style.color || '#F59E0B';
+      const stroke = style.strokeColor || style.color || '#F59E0B';
+      return [
+        new fabric.Line([centerX, centerY - rayLen * 1.5, centerX, centerY - rayLen * 0.6], {
+          stroke, strokeWidth: 3, strokeLineCap: 'round',
+        }),
+        new fabric.Line([centerX, centerY + rayLen * 0.6, centerX, centerY + rayLen * 1.5], {
+          stroke, strokeWidth: 3, strokeLineCap: 'round',
+        }),
+        new fabric.Line([centerX - rayLen * 1.5, centerY, centerX - rayLen * 0.6, centerY], {
+          stroke, strokeWidth: 3, strokeLineCap: 'round',
+        }),
+        new fabric.Line([centerX + rayLen * 0.6, centerY, centerX + rayLen * 1.5, centerY], {
+          stroke, strokeWidth: 3, strokeLineCap: 'round',
+        }),
+        new fabric.Circle({
+          left: x, top: y, radius: w * 0.28,
+          fill,
+          originX: 'left', originY: 'top', angle,
+        }),
+      ];
+    },
+  },
+  drop: {
+    label: 'Droplet', category: 'Nature', emoji: '💧',
+    svg: `<path d="M14,2 C22,10 27,17 14,27 C1,17 6,10 14,2Z" fill="currentColor"/>`,
+    fabric: (style, x, y, w, h, angle) => new fabric.Path(
+      'M0,-50 C25,-20 50,20 0,50 C-50,20 -25,-20 0,-50 Z', {
+        left: x, top: y, scaleX: w / 100, scaleY: h / 100,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      }
+    ),
+  },
+};
+
+// Group shapes by category
+var SHAPE_CATEGORIES = ['Basic', 'Arrows', 'Symbols', 'Nature'];
+
+// Render the shape picker categories HTML
+function renderShapePicker() {
+  const sheet = document.getElementById('shape-sheet');
+  sheet.innerHTML = '';
+
+  for (const cat of SHAPE_CATEGORIES) {
+    const shapes = Object.entries(SHAPES).filter(([, s]) => s.category === cat);
+    if (!shapes.length) continue;
+
+    const catDiv = document.createElement('div');
+    catDiv.className = 'shape-category';
+    catDiv.dataset.category = cat;
+
+    catDiv.innerHTML = `
+      <div class="shape-category-header">
+        <span class="shape-category-title">${cat}</span>
+        <span class="shape-category-chevron">▼</span>
+      </div>
+      <div class="shape-category-items">
+        ${shapes.map(([id, s]) => `
+          <div class="shape-opt" data-shape="${id}">
+            <div class="shape-opt-icon">
+              <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: var(--text-dim)">
+                ${s.svg}
+              </svg>
+            </div>
+            <span class="shape-opt-label">${s.label}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    // Collapsible header
+    catDiv.querySelector('.shape-category-header').addEventListener('click', () => {
+      catDiv.classList.toggle('collapsed');
+    });
+
+    // Shape option clicks (delegated)
+    catDiv.querySelectorAll('.shape-opt').forEach(opt => {
+      opt.addEventListener('click', () => {
+        const shape = opt.dataset.shape;
+        hideShapePicker();
+        addShapeToCanvas(shape);
+      });
+    });
+
+    sheet.appendChild(catDiv);
+  }
+}
+
+// Add a shape to canvas by shape ID
+async function addShapeToCanvas(shapeId) {
+  const def = SHAPES[shapeId];
+  if (!def) return;
+
+  try {
+    const res = await fetch(`${SERVER}/api/element`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'shape',
+        shape: shapeId,
+        style: { color: '#58A6FF', fillColor: '#58A6FF', strokeColor: '#58A6FF' },
+        position: { x: 80, y: 80, width: 60, height: 60 },
+      }),
+    });
+    if (!res.ok) throw new Error();
+    const el = await res.json();
+    addElementToCanvas(el, true);
+    const active = fabricCanvas.getActiveObject();
+    if (active) active.elementId = el.id;
+  } catch {
+    showError('Failed to add shape');
+  }
+}
+
+// Initialize shape picker on load
+function initShapePicker() {
+  renderShapePicker();
+
+  // Close on overlay click
+  document.getElementById('shape-picker').addEventListener('click', (e) => {
+    if (e.target.id === 'shape-picker') hideShapePicker();
+  });
+}
+
+// =============================================================================
+// Fabric.js canvas
+// =============================================================================
+var canvasWrap = document.getElementById('canvas-wrap');
+var canvasEl = document.getElementById('poster-canvas');
+
+var fabricCanvas = new fabric.Canvas('poster-canvas', {
+  preserveObjectStacking: true,
+  stopContextMenu: true,
+  fireRightClick: true,
+  width: mmToPx(297),   // default A4
+  height: mmToPx(210),
+});
+
+// Global state
+let currentState = null;   // full state from server
+let selectedId = null;    // id of currently selected element
+
+// =============================================================================
+// Utility
+// =============================================================================
+function showError(msg) {
+  const el = document.getElementById('error-banner');
+  document.getElementById('error-msg').textContent = msg;
+  el.classList.add('visible');
+  setTimeout(() => el.classList.remove('visible'), 4000);
+}
+
+function showLoading(show) {
+  const el = document.getElementById('loading');
+  if (show) el.classList.remove('hidden');
+  else el.classList.add('hidden');
+}
+
+function hideMenu() {
+  document.getElementById('menu-overlay').classList.remove('visible');
+}
+
+function hideShapePicker() {
+  document.getElementById('shape-picker').classList.remove('visible');
+}
+
+// =============================================================================
+// Canvas sizing & zoom
+// =============================================================================
+function fitCanvas(canvasWidthPx, canvasHeightPx) {
+  const wrap = canvasWrap.getBoundingClientRect();
+  const scaleX = wrap.width / canvasWidthPx;
+  const scaleY = wrap.height / canvasHeightPx;
+  const scale = Math.min(scaleX, scaleY) * 0.9;
+
+  fabricCanvas.setWidth(canvasWidthPx * scale);
+  fabricCanvas.setHeight(canvasHeightPx * scale);
+  fabricCanvas.setZoom(scale);
+
+  // Position the element
+  canvasEl.style.transform = `translate(0, 0)`;
+
+  fabricCanvas.renderAll();
+}
+
+function resizeCanvas() {
+  if (!currentState) return;
+  const meta = currentState.meta;
+  const w = mmToPx(meta.width_mm);
+  const h = mmToPx(meta.height_mm);
+  fabricCanvas.setWidth(w);
+  fabricCanvas.setHeight(h);
+  fitCanvas(w, h);
+}
+
+// =============================================================================
+// Render state → Fabric canvas
+// =============================================================================
+function renderCanvas(state) {
+  fabricCanvas.clear();
+
+  const meta = state.meta;
+  const bg = state.background;
+
+  // Background
+  if (bg.type === 'solid') {
+    fabricCanvas.backgroundColor = bg.color || '#ffffff';
+  } else if (bg.type === 'gradient' && bg.gradient) {
+    const { angle, stops } = bg.gradient;
+    const deg = (angle || 0) * Math.PI / 180;
+    const x1 = 50 + 50 * Math.cos(deg);
+    const y1 = 50 + 50 * Math.sin(deg);
+    const g = new fabric.Gradient({
+      type: 'linear',
+      gradientUnits: 'percentage',
+      coords: { x1: 50, y1: 50, x2: x1, y2: y1 },
+      colorStops: stops.map((s, i) => ({ offset: i / (stops.length - 1), color: s.color })),
+    });
+    fabricCanvas.backgroundColor = g;
+  } else {
+    fabricCanvas.backgroundColor = '#ffffff';
+  }
+
+  // Elements
+  for (const el of (state.elements || [])) {
+    addElementToCanvas(el, false);
+  }
+
+  fabricCanvas.renderAll();
+  resizeCanvas();
+}
+
+// =============================================================================
+// Add one element to Fabric canvas
+// =============================================================================
+function addElementToCanvas(el, selectIt = true) {
+  const pos = el.position || {};
+  const style = el.style || {};
+
+  const x = mmToPx(pos.x || 0);
+  const y = mmToPx(pos.y || 0);
+  const w = mmToPx(pos.width || 50);
+  const h = mmToPx(pos.height || 20);
+  const angle = pos.rotation || 0;
+
+  let obj = null;
+
+  if (el.type === 'text' || el.type === 'textbox') {
+    obj = new fabric.Textbox(el.content || 'Text', {
+      left: x,
+      top: y,
+      width: w,
+      fontFamily: style.fontFamily || 'Noto Sans',
+      fontSize: style.fontSize || 24,
+      fontWeight: style.fontWeight || '400',
+      fill: style.color || '#000000',
+      textAlign: style.textAlign || 'left',
+      lineHeight: style.lineHeight || 1.4,
+      originX: 'left',
+      originY: 'top',
+      angle,
+    });
+  } else if (el.type === 'shape' || el.shape) {
+    const shapeType = el.shape || style.shape || 'rect';
+    const def = SHAPES[shapeType];
+    if (def) {
+      const result = def.fabric(style, x, y, w, h, angle);
+      if (Array.isArray(result)) {
+        obj = result; // sun etc returns array
+      } else {
+        obj = result;
+      }
+    } else {
+      // Fallback to rect
+      obj = new fabric.Rect({
+        left: x, top: y, width: w, height: h,
+        fill: style.fillColor || style.color || '#58A6FF',
+        originX: 'left', originY: 'top', angle,
+      });
+    }
+  } else if (el.type === 'image') {
+    fabric.Image.fromURL(el.content || '', (img) => {
+      img.set({ left: x, top: y, scaleX: w / (img.width || 1), scaleY: h / (img.height || 1), angle });
+      img.setCoords();
+      fabricCanvas.add(img);
+      fabricCanvas.renderAll();
+    });
+    return; // async — don't add synchronously
+  }
+
+  if (obj) {
+    if (Array.isArray(obj)) {
+      obj.forEach(o => {
+        o.set({ selectable: !el.locked, evented: !el.locked, visible: el.visible !== false });
+        o.setCoords();
+        fabricCanvas.add(o);
+        if (selectIt) fabricCanvas.setActiveObject(o);
+      });
+    } else {
+      obj.set({ selectable: !el.locked, evented: !el.locked, visible: el.visible !== false });
+      obj.setCoords();
+      fabricCanvas.add(obj);
+      if (selectIt) fabricCanvas.setActiveObject(obj);
+    }
+  }
+}
+
+// =============================================================================
+// Sync element selection to contextual toolbar
+// =============================================================================
+function updateContextBar() {
+  const ctxBar = document.getElementById('ctx-bar');
+  const active = fabricCanvas.getActiveObject();
+  const textOpts = document.getElementById('ctx-text-options');
+
+  if (!active) {
+    ctxBar.classList.remove('visible');
+    selectedId = null;
+    return;
+  }
+
+  ctxBar.classList.add('visible');
+
+  // Find element id from custom prop
+  const id = active.elementId;
+  selectedId = id || null;
+
+  const sizeInput = document.getElementById('ctx-size');
+  const colorInput = document.getElementById('ctx-color');
+  const ctxLabel = document.getElementById('ctx-label');
+
+  const isText = active.type === 'textbox' || active.type === 'text';
+  textOpts.style.display = isText ? 'flex' : 'none';
+
+  if (isText) {
+    sizeInput.value = active.fontSize || 24;
+    colorInput.value = active.fill || '#ffffff';
+    ctxLabel.textContent = 'Size';
+    document.getElementById('ctx-label2').textContent = 'Color';
+    // Update font family
+    document.getElementById('ctx-font-family').value = active.fontFamily || 'Noto Sans';
+    // Update letter spacing
+    const ls = active.charSpacing ? active.charSpacing / 1000 : 0;
+    document.getElementById('ctx-letter-spacing').value = ls;
+    // Update style buttons
+    document.querySelectorAll('.ctx-style-btn').forEach(btn => {
+      const style = btn.dataset.style;
+      if (style === 'bold') btn.classList.toggle('active', active.fontWeight === 'bold');
+      if (style === 'italic') btn.classList.toggle('active', active.fontStyle === 'italic');
+      if (style === 'underline') btn.classList.toggle('active', active.underline);
+    });
+    // Update align buttons
+    document.querySelectorAll('.ctx-align-btn').forEach(btn => {
+      const align = btn.dataset.align;
+      btn.classList.toggle('active', active.textAlign === align);
+    });
+  } else if (active.type === 'circle' || active.type === 'rect' || active.type === 'triangle') {
+    sizeInput.value = Math.round((active.width || 50));
+    colorInput.value = active.fill || '#58A6FF';
+    ctxLabel.textContent = 'Width';
+    document.getElementById('ctx-label2').textContent = 'Fill';
+  }
+
+  // Show opacity and layer controls for all objects
+  const opLabel = document.getElementById('ctx-op-label');
+  const opSlider = document.getElementById('ctx-opacity');
+  const bringFwd = document.getElementById('ctx-bring-fwd');
+  const sendBack = document.getElementById('ctx-send-back');
+  opLabel.style.display = 'inline';
+  opSlider.style.display = 'inline';
+  bringFwd.style.display = 'flex';
+  sendBack.style.display = 'flex';
+  // Sync current opacity value
+  const opacity = active.opacity !== undefined ? Math.round((active.opacity) * 100) : 100;
+  opSlider.value = opacity;
+}
+
+// Context bar: opacity slider
+document.getElementById('ctx-opacity').addEventListener('input', (e) => {
+  const active = fabricCanvas.getActiveObject();
+  if (!active) return;
+  const val = parseInt(e.target.value) / 100;
+  active.set('opacity', val);
+  fabricCanvas.renderAll();
+});
+
+document.getElementById('ctx-opacity').addEventListener('change', syncToServer);
+
+// Context bar: bring forward
+document.getElementById('ctx-bring-fwd').addEventListener('click', () => {
+  const active = fabricCanvas.getActiveObject();
+  if (!active) return;
+  fabricCanvas.bringForward(active, true);
+  fabricCanvas.renderAll();
+  syncToServer();
+});
+
+// Context bar: send backward
+document.getElementById('ctx-send-back').addEventListener('click', () => {
+  const active = fabricCanvas.getActiveObject();
+  if (!active) return;
+  fabricCanvas.sendBackwards(active, true);
+  fabricCanvas.renderAll();
+  syncToServer();
+});
+
+// =============================================================================
+// Sync Fabric object → server
+// =============================================================================
+async function syncToServer() {
+  if (!selectedId) return;
+  const active = fabricCanvas.getActiveObject();
+  if (!active) return;
+
+  const pos = active.getBoundingRect(true);
+  const payload = {
+    position: {
+      x: pxToMm(pos.left / (fabricCanvas.getZoom())),
+      y: pxToMm(pos.top / (fabricCanvas.getZoom())),
+      width: pxToMm(active.width * (active.scaleX || 1)),
+      height: pxToMm(active.height * (active.scaleY || 1)),
+      rotation: active.angle || 0,
+    }
+  };
+
+  // For text, sync style too
+  if (active.type === 'textbox' || active.type === 'text') {
+    payload.style = {
+      fontSize: active.fontSize,
+      color: active.fill,
+      fontFamily: active.fontFamily,
+      fontWeight: active.fontWeight,
+      fontStyle: active.fontStyle,
+      underline: active.underline,
+      textAlign: active.textAlign,
+      charSpacing: active.charSpacing,
+    };
+  } else if (active.type === 'circle' || active.type === 'rect' || active.type === 'triangle') {
+    payload.style = { fillColor: active.fill };
+  }
+
+  // Always sync opacity
+  if (active.opacity !== undefined) {
+    payload.style = payload.style || {};
+    payload.style.opacity = active.opacity;
+  }
+
+  try {
+    await fetch(`${SERVER}/api/element/${selectedId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (e) {
+    showError('Failed to sync changes');
+  }
+}
+
+// =============================================================================
+// Event handlers
+// =============================================================================
+
+// Canvas selection changes
+fabricCanvas.on('selection:created', updateContextBar);
+fabricCanvas.on('selection:updated', updateContextBar);
+fabricCanvas.on('selection:cleared', updateContextBar);
+
+// Object modified (move/resize/rotate)
+fabricCanvas.on('object:modified', syncToServer);
+
+// Text editing committed
+fabricCanvas.on('text:changed', (e) => {
+  const id = e.target.elementId;
+  if (!id) return;
+  fetch(`${SERVER}/api/element/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: e.target.text }),
+  }).catch(() => showError('Failed to save text'));
+});
+
+// Keyboard delete
+document.addEventListener('keydown', async (e) => {
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+    const active = fabricCanvas.getActiveObject();
+    if (!active) return;
+    const id = active.elementId;
+    if (!id) return;
+    fabricCanvas.remove(active);
+    try {
+      await fetch(`${SERVER}/api/element/${id}?agent=pwa`, { method: 'DELETE' });
+    } catch { showError('Failed to delete element'); }
+    updateContextBar();
+  }
+});
+
+// Context bar size slider
+document.getElementById('ctx-size').addEventListener('input', (e) => {
+  const active = fabricCanvas.getActiveObject();
+  if (!active) return;
+  const val = parseInt(e.target.value);
+  if (active.type === 'textbox' || active.type === 'text') {
+    active.set('fontSize', val);
+  } else {
+    active.set('scaleX', 1);
+    active.set('width', val);
+  }
+  active.setCoords();
+  fabricCanvas.renderAll();
+});
+
+document.getElementById('ctx-size').addEventListener('change', syncToServer);
+
+// Context bar color
+document.getElementById('ctx-color').addEventListener('input', (e) => {
+  const active = fabricCanvas.getActiveObject();
+  if (!active) return;
+  if (active.type === 'textbox' || active.type === 'text') {
+    active.set('fill', e.target.value);
+  } else {
+    active.set('fill', e.target.value);
+  }
+  active.setCoords();
+  fabricCanvas.renderAll();
+});
+
+document.getElementById('ctx-color').addEventListener('change', syncToServer);
+
+// Context bar font family
+document.getElementById('ctx-font-family').addEventListener('change', (e) => {
+  const active = fabricCanvas.getActiveObject();
+  if (!active) return;
+  active.set('fontFamily', e.target.value);
+  fabricCanvas.renderAll();
+  syncToServer();
+});
+
+// Context bar style buttons
+document.querySelectorAll('.ctx-style-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const active = fabricCanvas.getActiveObject();
+    if (!active) return;
+    const style = btn.dataset.style;
+    if (style === 'bold') {
+      active.set('fontWeight', active.fontWeight === 'bold' ? 'normal' : 'bold');
+      btn.classList.toggle('active', active.fontWeight === 'bold');
+    } else if (style === 'italic') {
+      active.set('fontStyle', active.fontStyle === 'italic' ? 'normal' : 'italic');
+      btn.classList.toggle('active', active.fontStyle === 'italic');
+    } else if (style === 'underline') {
+      active.set('underline', !active.underline);
+      btn.classList.toggle('active', active.underline);
+    }
+    fabricCanvas.renderAll();
+    syncToServer();
+  });
+});
+
+// Context bar align buttons
+document.querySelectorAll('.ctx-align-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const active = fabricCanvas.getActiveObject();
+    if (!active) return;
+    const align = btn.dataset.align;
+    active.set('textAlign', align);
+    document.querySelectorAll('.ctx-align-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    fabricCanvas.renderAll();
+    syncToServer();
+  });
+});
+
+// Context bar letter spacing
+document.getElementById('ctx-letter-spacing').addEventListener('input', (e) => {
+  const active = fabricCanvas.getActiveObject();
+  if (!active) return;
+  const val = parseInt(e.target.value);
+  active.set('charSpacing', val * 1000);
+  fabricCanvas.renderAll();
+});
+document.getElementById('ctx-letter-spacing').addEventListener('change', syncToServer);
+
+// Context bar delete
+document.getElementById('ctx-delete').addEventListener('click', async () => {
+  const active = fabricCanvas.getActiveObject();
+  if (!active) return;
+  const id = active.elementId;
+  fabricCanvas.remove(active);
+  if (id) {
+    try { await fetch(`${SERVER}/api/element/${id}?agent=pwa`, { method: 'DELETE' }); }
+    catch { showError('Failed to delete element'); }
+  }
+  updateContextBar();
+});
+
+// Toolbar: Text
+document.getElementById('btn-text').addEventListener('click', async () => {
+  try {
+    const res = await fetch(`${SERVER}/api/element`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'text',
+        content: 'New Text',
+        style: { fontSize: 36, color: '#ffffff', textAlign: 'center', fontFamily: 'Noto Sans' },
+        position: { x: 50, y: 50, width: 120, height: 30 },
+      }),
+    });
+    if (!res.ok) throw new Error('Server error');
+    const el = await res.json();
+    addElementToCanvas(el, true);
+    // Store id on fabric object
+    const active = fabricCanvas.getActiveObject();
+    if (active) active.elementId = el.id;
+  } catch (e) {
+    showError('Failed to add text — is server running?');
+  }
+});
+
+// Toolbar: Image
+document.getElementById('btn-image').addEventListener('click', () => {
+  document.getElementById('image-picker').classList.add('visible');
+});
+
+// Close image picker on overlay click
+document.getElementById('image-picker').addEventListener('click', (e) => {
+  if (e.target.id === 'image-picker') document.getElementById('image-picker').classList.remove('visible');
+});
+
+// Image picker: Upload from device
+document.getElementById('img-upload').addEventListener('click', () => {
+  document.getElementById('image-picker').classList.remove('visible');
+  document.getElementById('image-file-input').click();
+});
+
+// Image picker: Import from URL
+document.getElementById('img-url').addEventListener('click', () => {
+  document.getElementById('image-picker').classList.remove('visible');
+  const url = prompt('Enter image URL:');
+  if (!url) return;
+  addImageToCanvas(url);
+});
+
+// Handle file input change
+document.getElementById('image-file-input').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  e.target.value = '';
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    const dataUrl = ev.target.result;
+    try {
+      const res = await fetch(`${SERVER}/api/upload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dataUrl, filename: file.name, agent: 'pwa' }),
+      });
+      if (!res.ok) throw new Error('Upload failed');
+      const { url } = await res.json();
+      addImageToCanvas(url);
+    } catch {
+      showError('Failed to upload image');
+    }
+  };
+  reader.readAsDataURL(file);
+});
+
+// Add image to canvas from URL
+async function addImageToCanvas(url) {
+  try {
+    const fabricImg = await fabric.Image.fromURL(url, { crossOrigin: 'anonymous' });
+    const canvasWidth = fabricCanvas.getWidth();
+    const canvasHeight = fabricCanvas.getHeight();
+    const maxDim = Math.min(canvasWidth, canvasHeight) * 0.5;
+    const scale = Math.min(maxDim / fabricImg.width, maxDim / fabricImg.height, 1);
+    fabricImg.set({
+      left: (canvasWidth - fabricImg.width * scale) / 2,
+      top: (canvasHeight - fabricImg.height * scale) / 2,
+      scaleX: scale,
+      scaleY: scale,
+      originX: 'left',
+      originY: 'top',
+    });
+    fabricCanvas.add(fabricImg);
+    fabricCanvas.setActiveObject(fabricImg);
+    fabricImg.elementId = null;
+    fabricCanvas.renderAll();
+    // Register on server
+    const pos = fabricImg.getBoundingRect(true);
+    const res = await fetch(`${SERVER}/api/element`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'image',
+        content: url,
+        position: {
+          x: pxToMm(pos.left / fabricCanvas.getZoom()),
+          y: pxToMm(pos.top / fabricCanvas.getZoom()),
+          width: pxToMm(fabricImg.width * scale),
+          height: pxToMm(fabricImg.height * scale),
+          rotation: fabricImg.angle || 0,
+        },
+        agent: 'pwa',
+      }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      fabricImg.elementId = data.id;
+    }
+  } catch {
+    showError('Failed to add image');
+  }
+}
+
+// Toolbar: Shape
+document.getElementById('btn-shape').addEventListener('click', () => {
+  document.getElementById('shape-picker').classList.add('visible');
+});
+
+// Close shape picker on overlay click
+document.getElementById('shape-picker').addEventListener('click', (e) => {
+  if (e.target.id === 'shape-picker') hideShapePicker();
+});
+
+// Toolbar: BG
+document.getElementById('btn-bg').addEventListener('click', () => {
+  document.getElementById('bg-picker').classList.add('visible');
+  // Sync current background to picker
+  const bg = currentState?.background;
+  if (bg && bg.type === 'solid') {
+    document.getElementById('bg-color-input').value = bg.color || '#0D1117';
+    switchBgTab('solid');
+  } else if (bg && bg.type === 'gradient' && bg.gradient) {
+    const g = bg.gradient;
+    document.getElementById('grad-angle').value = g.angle || 45;
+    document.getElementById('grad-angle-val').textContent = (g.angle || 45) + '°';
+    if (g.stops && g.stops.length >= 2) {
+      document.getElementById('grad-stop1').value = g.stops[0].color;
+      document.getElementById('grad-stop2').value = g.stops[1].color;
+    }
+    switchBgTab('gradient');
+  } else {
+    switchBgTab('solid');
+  }
+});
+
+// BG picker tab switching
+function switchBgTab(tab) {
+  document.querySelectorAll('.sheet-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.getElementById('bg-solid-panel').classList.toggle('active', tab === 'solid');
+  document.getElementById('bg-gradient-panel').classList.toggle('active', tab === 'gradient');
+  document.getElementById('angle-row').style.display = tab === 'radial' ? 'none' : 'flex';
+}
+document.querySelectorAll('.sheet-tab').forEach(t => {
+  t.addEventListener('click', () => switchBgTab(t.dataset.tab));
+});
+
+// BG picker: color swatches
+document.querySelectorAll('.swatch').forEach(sw => {
+  sw.addEventListener('click', () => {
+    document.getElementById('bg-color-input').value = sw.dataset.color;
+    document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+    sw.classList.add('selected');
+  });
+});
+
+// BG picker: quick presets
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('bg-color-input').value = btn.dataset.color;
+  });
+});
+
+// BG picker: gradient angle slider
+document.getElementById('grad-angle').addEventListener('input', (e) => {
+  document.getElementById('grad-angle-val').textContent = e.target.value + '°';
+});
+
+// BG picker: gradient presets
+document.querySelectorAll('.preset-grad').forEach(pg => {
+  pg.addEventListener('click', () => {
+    const stops = JSON.parse(pg.dataset.stops);
+    const angle = parseInt(pg.dataset.angle);
+    document.getElementById('grad-stop1').value = stops[0];
+    document.getElementById('grad-stop2').value = stops[1];
+    document.getElementById('grad-angle').value = angle;
+    document.getElementById('grad-angle-val').textContent = angle + '°';
+  });
+});
+
+// BG picker: gradient type toggle
+document.querySelectorAll('.grad-type-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.grad-type-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const type = btn.dataset.type;
+    document.getElementById('angle-row').style.display = type === 'radial' ? 'none' : 'flex';
+  });
+});
+
+// BG picker: apply solid
+document.getElementById('bg-apply-btn').addEventListener('click', () => {
+  const color = document.getElementById('bg-color-input').value;
+  fetch(`${SERVER}/api/background`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'solid', color, agent: 'pwa' }),
+  }).then(() => {
+    if (currentState) currentState.background = { type: 'solid', color };
+    fabricCanvas.backgroundColor = color;
+    fabricCanvas.renderAll();
+    document.getElementById('bg-picker').classList.remove('visible');
+  }).catch(() => showError('Failed to set background'));
+});
+
+// BG picker: apply gradient
+document.getElementById('bg-grad-apply-btn').addEventListener('click', () => {
+  const angle = parseInt(document.getElementById('grad-angle').value);
+  const stop1 = document.getElementById('grad-stop1').value;
+  const stop2 = document.getElementById('grad-stop2').value;
+  const gradType = document.querySelector('.grad-type-btn.active').dataset.type;
+  fetch(`${SERVER}/api/background`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      type: 'gradient',
+      gradient: { type: gradType, angle, stops: [{ color: stop1 }, { color: stop2 }] },
+      agent: 'pwa',
+    }),
+  }).then(() => {
+    if (currentState) currentState.background = { type: 'gradient', gradient: { type: gradType, angle, stops: [{ color: stop1 }, { color: stop2 }] } };
+    const deg = angle * Math.PI / 180;
+    const x1 = 50 + 50 * Math.cos(deg);
+    const y1 = 50 + 50 * Math.sin(deg);
+    const g = new fabric.Gradient({
+      type: gradType,
+      gradientUnits: 'percentage',
+      coords: { x1: 50, y1: 50, x2: x1, y2: y1 },
+      colorStops: [
+        { offset: 0, color: stop1 },
+        { offset: 1, color: stop2 },
+      ],
+    });
+    fabricCanvas.backgroundColor = g;
+    fabricCanvas.renderAll();
+    document.getElementById('bg-picker').classList.remove('visible');
+  }).catch(() => showError('Failed to set gradient'));
+});
+
+// Close BG picker on overlay click
+document.getElementById('bg-picker').addEventListener('click', (e) => {
+  if (e.target.id === 'bg-picker') document.getElementById('bg-picker').classList.remove('visible');
+});
+
+// Update original size display when state loads
+function updateExportSizeDisplay() {
+  if (!currentState || !currentState.meta) return;
+  const w = Math.round(currentState.meta.width);
+  const h = Math.round(currentState.meta.height);
+  const sub = document.getElementById('size-orig-sub');
+  if (sub) sub.textContent = `${w}×${h}`;
+}
+
+// Toolbar: Export
+document.getElementById('btn-export').addEventListener('click', () => {
+  updateExportSizeDisplay();
+  document.getElementById('export-picker').classList.add('visible');
+});
+
+// Export picker: format selection
+let selectedFormat = 'png';
+document.querySelectorAll('.format-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.format-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    selectedFormat = card.dataset.format;
+    document.getElementById('quality-row').style.display = selectedFormat === 'jpeg' ? 'flex' : 'none';
+  });
+});
+
+// Export picker: size selection
+let selectedSize = 'original';
+document.querySelectorAll('.size-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedSize = btn.dataset.size;
+  });
+});
+
+// Export picker: DPI selection
+let selectedDpi = 300;
+document.querySelectorAll('.dpi-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.dpi-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedDpi = parseInt(btn.dataset.dpi);
+  });
+});
+
+// Export picker: quality slider
+document.getElementById('export-quality').addEventListener('input', (e) => {
+  document.getElementById('export-quality-val').textContent = e.target.value + '%';
+});
+
+// Close export picker on overlay click
+document.getElementById('export-picker').addEventListener('click', (e) => {
+  if (e.target.id === 'export-picker') document.getElementById('export-picker').classList.remove('visible');
+});
+
+// Export picker: do export
+document.getElementById('export-do-btn').addEventListener('click', async () => {
+  const quality = parseInt(document.getElementById('export-quality').value);
+  try {
+    let url = `${SERVER}/api/export?format=${selectedFormat}&dpi=${selectedDpi}`;
+    if (selectedFormat === 'jpeg') url += `&quality=${quality}`;
+    if (selectedSize !== 'original') {
+      const dims = { square: '1080x1080', story: '1080x1920' }[selectedSize];
+      url += `&size=${dims}`;
+    }
+    const res = await fetch(url, { method: 'POST' });
+    if (!res.ok) throw new Error();
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = `poster.${selectedFormat === 'jpeg' ? 'jpg' : selectedFormat}`;
+    a.click();
+    URL.revokeObjectURL(blobUrl);
+    document.getElementById('export-picker').classList.remove('visible');
+  } catch {
+    showError('Export failed — check server');
+  }
+});
+
+// Toolbar: More
+document.getElementById('btn-more').addEventListener('click', () => {
+  document.getElementById('menu-overlay').classList.add('visible');
+});
+
+// Close menus
+document.getElementById('menu-overlay').addEventListener('click', (e) => {
+  if (e.target.id === 'menu-overlay') hideMenu();
+});
+
+document.getElementById('menu-templates').addEventListener('click', async () => {
+  hideMenu();
+  const tpl = prompt('Enter template name:\nA4, A3, Square, Mobile, Wide', 'A4');
+  if (!tpl) return;
+  try {
+    const res = await fetch(`${SERVER}/api/template`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: tpl, agent: 'pwa' }),
+    });
+    if (!res.ok) throw new Error();
+    await loadState();
+  } catch {
+    showError('Failed to apply template');
+  }
+});
+
+document.getElementById('menu-about').addEventListener('click', () => {
+  hideMenu();
+  alert('Poster Designer\nv0.1.0 — PWA Edition\nMobile-first Fabric.js canvas');
+});
+
+document.getElementById('menu-reset').addEventListener('click', async () => {
+  hideMenu();
+  if (!confirm('Start a new design? Current work will be lost.')) return;
+  try {
+    await fetch(`${SERVER}/api/template`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'A4', agent: 'pwa' }),
+    });
+    await loadState();
+  } catch {
+    showError('Failed to reset');
+  }
+});
+
+// Undo
+document.getElementById('btn-undo').addEventListener('click', async () => {
+  try {
+    const res = await fetch(`${SERVER}/api/undo`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agent: 'pwa' }),
+    });
+    if (!res.ok) throw new Error();
+    await loadState();
+  } catch {
+    showError('Undo failed');
+  }
+});
+
+// Redo (placeholder — not implemented on server yet)
+document.getElementById('btn-redo').addEventListener('click', () => {
+  showError('Redo not yet implemented');
+});
+
+// Back button
+document.getElementById('btn-back').addEventListener('click', () => {
+  window.location.href = './';
+});
+
+// =============================================================================
+// Load state from server
+// =============================================================================
+async function loadState() {
+  showLoading(true);
+  try {
+    const res = await fetch(`${SERVER}/api/state`);
+    if (!res.ok) throw new Error();
+    currentState = await res.json();
+
+    // Update title
+    const meta = currentState.meta;
+    document.getElementById('doc-title').textContent = `Poster Designer — ${meta.template}`;
+
+    renderCanvas(currentState);
+    updateExportSizeDisplay();
+  } catch (e) {
+    showError(`Cannot connect to server at ${SERVER}`);
+    // Retry every 5s
+    setTimeout(loadState, 5000);
+  } finally {
+    showLoading(false);
+  }
+}
+
+// =============================================================================
+// Supabase Realtime updates
+// =============================================================================
+let realtimeChannel = null;
+let agentBadgeTimer = null;
+let sseDebounceTimer = null;
+
+function getPosterIdFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('poster') || params.get('poster_id') || '1';
+}
+
+// Connect to Supabase Realtime for real-time updates
+function connectRealtime() {
+  const posterId = getPosterIdFromURL();
+
+  realtimeChannel = supabase
+    .channel(`poster-${posterId}`)
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table: 'elements',
+      filter: `poster_id=eq.${posterId}`
+    }, (payload) => {
+      // Debounce rapid updates — only refresh once per 300ms
+      if (sseDebounceTimer) clearTimeout(sseDebounceTimer);
+      sseDebounceTimer = setTimeout(async () => {
+        await refreshCanvas();
+        triggerSyncFlash();
+      }, 300);
+    })
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        document.getElementById('conn-status').textContent = '🟢';
+      } else if (status === 'CHANNEL_ERROR') {
+        document.getElementById('conn-status').textContent = '🔴';
+      }
+    });
+}
+
+// Handle incoming realtime events (for agent indicators)
+function handleRealtimeEvent(data) {
+  const { type, payload } = data;
+
+  switch (type) {
+    case 'compose_complete':
+      showNotification('✓ Poster composed!');
+      break;
+
+    case 'agent_editing':
+      showAgentIndicator(payload.action);
+      break;
+  }
+}
+
+// Refresh canvas from server state
+async function refreshCanvas() {
+  // Skip if user is actively interacting
+  const active = fabricCanvas.getActiveObject();
+  if (active && (active.isDragging || active.isMoving)) {
+    return; // defer until interaction ends
+  }
+
+  try {
+    const res = await fetch(`${SERVER}/api/state`);
+    if (!res.ok) return;
+    currentState = await res.json();
+    renderCanvas(currentState);
+  } catch (e) {
+    // Silently fail — don't interrupt user
+  }
+}
+
+// Show agent editing indicator
+function showAgentIndicator(action) {
+  const badge = document.getElementById('agent-badge');
+  badge.textContent = `✏️ Nexi: ${action || 'editing…'}`;
+  badge.style.display = 'inline';
+  if (agentBadgeTimer) clearTimeout(agentBadgeTimer);
+  agentBadgeTimer = setTimeout(() => {
+    badge.style.display = 'none';
+  }, 5000);
+}
+
+// Trigger visual sync indicator
+function triggerSyncFlash() {
+  const el = document.getElementById('sync-flash');
+  el.classList.remove('visible');
+  void el.offsetWidth; // reflow to restart animation
+  el.classList.add('visible');
+  setTimeout(() => el.classList.remove('visible'), 1500);
+}
+
+// Simple notification
+function showNotification(msg) {
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#58A6FF;color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;z-index:300;animation:fadeIn 0.2s';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.5s'; setTimeout(() => el.remove(), 500); }, 2500);
+}
+
+// =============================================================================
+// Resize handling
+// =============================================================================
+window.addEventListener('resize', () => {
+  if (currentState) resizeCanvas();
+});
+
+// =============================================================================
+// Prevent default touch gestures on canvas
+// =============================================================================
+canvasEl.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true });
+canvasEl.addEventListener('touchmove', (e) => e.stopPropagation(), { passive: true });
+canvasEl.addEventListener('touchend', (e) => e.stopPropagation(), { passive: true });
+
+// =============================================================================
+// PWA: register service worker
+// =============================================================================
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// =============================================================================
+// Start
+// =============================================================================
+initShapePicker();
+loadState().then(() => {
+  // Connect Supabase Realtime after initial state load to avoid race conditions
+  connectRealtime();
+});
+
+</script>
+</body>
+</html>
