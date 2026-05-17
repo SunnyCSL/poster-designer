@@ -3,30 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <meta name="theme-color" content="#0D1117">
+  <meta name="theme-color" content="#08090a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Poster Designer</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235e6ad2' stroke-width='2'><rect x='3' y='3' width='18' height='18' rx='2'/><circle cx='8.5' cy='8.5' r='1.5'/><path d='M21 15l-5-5L5 21'/></svg>">
   <link href="https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0D1117;
-      --surface: #161B22;
-      --surface2: #21262D;
-      --border: #30363D;
-      --text: #E6EDF3;
-      --text-dim: #8B949E;
-      --accent: #58A6FF;
-      --danger: #F85149;
+      --bg: #08090a;
+      --surface: #0f1011;
+      --surface2: #191a1b;
+      --surface3: #212325;
+      --border: rgba(255,255,255,0.08);
+      --border-subtle: rgba(255,255,255,0.05);
+      --text: #f7f8f8;
+      --text-dim: #8a8f98;
+      --text-subtle: #62666d;
+      --accent: #5e6ad2;
+      --accent-hover: #7170ff;
+      --accent-bg: rgba(94,106,210,0.15);
+      --danger: #f85149;
+      --success: #3fb950;
       --top-h: 44px;
       --bottom-h: 56px;
       --ctx-h: 44px;
       --safe-top: env(safe-area-inset-top, 0px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
     html, body {
@@ -34,10 +44,27 @@
       overflow: hidden;
       background: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: var(--font);
       font-size: 14px;
       -webkit-tap-highlight-color: transparent;
       user-select: none;
+    }
+
+    /* ── SVG Icons ── */
+    .svg-icon {
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .svg-icon-sm {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+    .svg-icon-xs {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
     }
 
     /* ── Layout ── */
@@ -50,7 +77,7 @@
 
     /* ── Top bar ── */
     #top-bar {
-      height: var(--top-h);
+      height: calc(var(--top-h) + var(--safe-top));
       padding-top: var(--safe-top);
       background: var(--surface);
       border-bottom: 1px solid var(--border);
@@ -64,6 +91,7 @@
       font-size: 15px;
       font-weight: 600;
       color: var(--text);
+      letter-spacing: -0.01em;
     }
     .icon-btn {
       width: 44px;
@@ -73,16 +101,18 @@
       justify-content: center;
       background: none;
       border: none;
-      color: var(--text);
-      font-size: 18px;
+      color: var(--text-dim);
       cursor: pointer;
       border-radius: 8px;
-      transition: background 0.15s;
+      transition: background 0.15s, color 0.15s;
       flex-shrink: 0;
     }
-    .icon-btn:active { background: var(--surface2); }
-    .icon-btn:disabled { opacity: 0.4; pointer-events: none; }
+    .icon-btn:active { background: var(--surface2); color: var(--text); }
+    .icon-btn:disabled { opacity: 0.3; pointer-events: none; }
+    .icon-btn:hover:not(:disabled) { color: var(--text); }
     .top-left, .top-right { display: flex; align-items: center; }
+    .top-left { gap: 2px; }
+    .top-right { gap: 2px; }
 
     /* ── Canvas area ── */
     #canvas-wrap {
@@ -108,39 +138,42 @@
       display: none;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      padding: 0 12px;
+      gap: 6px;
+      padding: 0 8px;
       flex-shrink: 0;
       z-index: 10;
     }
     #ctx-bar.visible { display: flex; }
     .ctx-label {
-      font-size: 12px;
+      font-size: 11px;
+      font-weight: 500;
       color: var(--text-dim);
-      min-width: 40px;
+      min-width: 36px;
+      text-align: center;
     }
     .ctx-slider {
       -webkit-appearance: none;
-      width: 120px;
+      width: 100px;
       height: 4px;
-      background: var(--border);
+      background: var(--surface3);
       border-radius: 2px;
       outline: none;
     }
     .ctx-slider::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 18px; height: 18px;
+      width: 16px; height: 16px;
       border-radius: 50%;
       background: var(--accent);
       cursor: pointer;
     }
     .ctx-color {
-      width: 32px; height: 32px;
+      width: 28px; height: 28px;
       border-radius: 50%;
-      border: 2px solid var(--border);
+      border: 1px solid var(--border);
       padding: 0;
       cursor: pointer;
       overflow: hidden;
+      flex-shrink: 0;
     }
     .ctx-color input { opacity: 0; width: 200%; height: 200%; margin: -50%; cursor: pointer; }
 
@@ -161,24 +194,42 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 3px;
-      min-width: 52px;
+      gap: 4px;
+      flex: 1;
       height: 52px;
       background: none;
       border: none;
-      color: var(--text);
-      font-size: 20px;
+      color: var(--text-dim);
       cursor: pointer;
       border-radius: 10px;
-      transition: background 0.15s;
+      transition: background 0.15s, color 0.15s;
       padding: 0 4px;
+      position: relative;
     }
     .tool-btn span {
       font-size: 10px;
+      font-weight: 500;
       color: var(--text-dim);
       line-height: 1;
+      transition: color 0.15s;
+    }
+    .tool-btn svg {
+      transition: color 0.15s, stroke 0.15s;
     }
     .tool-btn:active { background: var(--surface2); }
+    .tool-btn.active { color: var(--accent); }
+    .tool-btn.active span { color: var(--accent); }
+    .tool-btn.active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 0 0 2px 2px;
+    }
 
     /* ── Error banner ── */
     #error-banner {
@@ -189,8 +240,8 @@
       background: var(--danger);
       color: #fff;
       font-size: 13px;
-      padding: 8px 12px;
-      border-radius: 8px;
+      padding: 10px 14px;
+      border-radius: 10px;
       display: none;
       z-index: 100;
       align-items: center;
@@ -213,19 +264,30 @@
     }
     #loading.hidden { opacity: 0; pointer-events: none; }
     .spinner {
-      width: 40px; height: 40px;
-      border: 3px solid var(--border);
+      width: 32px; height: 32px;
+      border: 2px solid var(--surface2);
       border-top-color: var(--accent);
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text {
+      font-size: 13px;
+      color: var(--text-dim);
+      font-weight: 500;
+    }
+    .loading-logo {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
 
     /* ── More menu overlay ── */
     #menu-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.7);
       display: none;
       z-index: 50;
       align-items: flex-end;
@@ -238,6 +300,14 @@
       width: 100%;
       max-width: 400px;
       padding: 8px 0 calc(var(--safe-bottom) + 16px);
+      border-top: 1px solid var(--border);
+    }
+    .menu-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--surface3);
+      border-radius: 2px;
+      margin: 8px auto 4px;
     }
     .menu-item {
       display: flex;
@@ -251,13 +321,15 @@
     }
     .menu-item:active { background: var(--surface2); }
     .menu-item.danger { color: var(--danger); }
+    .menu-item svg { color: var(--text-dim); flex-shrink: 0; }
+    .menu-item.danger svg { color: var(--danger); }
     .menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
 
     /* ── Shape picker ── */
     #shape-picker {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.7);
       display: none;
       z-index: 60;
       align-items: flex-end;
@@ -269,9 +341,17 @@
       border-radius: 16px 16px 0 0;
       width: 100%;
       max-width: 400px;
-      max-height: 360px;
+      max-height: 65vh;
       overflow-y: auto;
       padding: 8px 0 calc(var(--safe-bottom) + 16px);
+      border-top: 1px solid var(--border);
+    }
+    .shape-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--surface3);
+      border-radius: 2px;
+      margin: 8px auto 4px;
     }
     .shape-category {
       border-bottom: 1px solid var(--border);
@@ -281,17 +361,19 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 16px;
+      padding: 12px 16px;
       cursor: pointer;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
       color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
       user-select: none;
     }
-    .shape-category-header:hover { color: var(--text); }
+    .shape-category-header:active { background: var(--surface2); }
     .shape-category-chevron {
       transition: transform 0.2s ease;
-      font-size: 10px;
+      color: var(--text-subtle);
     }
     .shape-category.collapsed .shape-category-chevron { transform: rotate(-90deg); }
     .shape-category-items {
@@ -312,44 +394,57 @@
       transition: background 0.15s;
       background: var(--surface2);
     }
-    .shape-opt:hover { background: var(--border); }
-    .shape-opt:active { background: var(--accent); }
+    .shape-opt:hover { background: var(--surface3); }
+    .shape-opt:active { background: var(--accent-bg); }
     .shape-opt-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; }
-    .shape-opt-icon svg { width: 24px; height: 24px; }
-    .shape-opt-label { font-size: 10px; color: var(--text-dim); text-align: center; }
+    .shape-opt-icon svg { width: 22px; height: 22px; }
+    .shape-opt-label { font-size: 10px; color: var(--text-dim); text-align: center; font-weight: 500; }
     .shape-opt:hover .shape-opt-label { color: var(--text); }
 
     /* ── Delete button ── */
-    #delete-btn {
+    #ctx-delete {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       background: none;
       border: none;
       color: var(--danger);
-      font-size: 16px;
       cursor: pointer;
-      padding: 8px;
+      padding: 0;
       border-radius: 8px;
+      flex-shrink: 0;
     }
-    #delete-btn:active { background: rgba(248, 81, 73, 0.15); }
+    #ctx-delete:active { background: rgba(248,81,73,0.15); }
 
     /* ── Connection status ── */
-    .conn-status {
-      font-size: 12px;
-      margin-left: 6px;
-      opacity: 0.8;
+    .conn-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--danger);
+      margin-left: 8px;
+      flex-shrink: 0;
+      transition: background 0.3s;
     }
+    .conn-dot.connected { background: var(--success); }
 
     /* ── Agent editing badge ── */
     .agent-badge {
-      font-size: 12px;
+      font-size: 11px;
+      font-weight: 500;
       color: var(--accent);
-      background: rgba(88, 166, 255, 0.12);
-      border: 1px solid rgba(88, 166, 255, 0.3);
+      background: var(--accent-bg);
+      border: 1px solid rgba(94,106,210,0.25);
       border-radius: 12px;
-      padding: 2px 10px;
+      padding: 3px 10px;
       margin-left: 8px;
       white-space: nowrap;
       animation: fadeIn 0.2s ease;
+      display: none;
     }
+    .agent-badge.visible { display: inline; }
 
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -358,23 +453,24 @@
       position: fixed;
       top: calc(var(--top-h) + var(--safe-top) + 8px);
       right: 12px;
-      background: rgba(88, 166, 255, 0.9);
+      background: var(--accent);
       color: #fff;
       font-size: 12px;
-      padding: 4px 10px;
+      font-weight: 500;
+      padding: 5px 12px;
       border-radius: 12px;
       display: none;
       z-index: 100;
       pointer-events: none;
     }
-    #sync-flash.visible { display: block; animation: flashFade 1.5s ease forwards; }
+    #sync-flash.visible { display: flex; align-items: center; gap: 6px; animation: flashFade 1.5s ease forwards; }
     @keyframes flashFade { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
 
     /* ── Image picker ── */
     #image-picker {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.7);
       display: none;
       z-index: 60;
       align-items: flex-end;
@@ -387,6 +483,14 @@
       width: 100%;
       max-width: 400px;
       padding: 8px 0 calc(var(--safe-bottom) + 16px);
+      border-top: 1px solid var(--border);
+    }
+    .image-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--surface3);
+      border-radius: 2px;
+      margin: 8px auto 4px;
     }
     .img-option {
       display: flex;
@@ -399,7 +503,19 @@
       transition: background 0.15s;
     }
     .img-option:active { background: var(--surface2); }
-    .img-option-icon { font-size: 20px; }
+    .img-option-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--surface2);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .img-option-icon svg { color: var(--text-dim); }
+    .img-option-text { font-weight: 500; }
+    .img-option-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
 
     /* ── Context bar text controls ── */
     .ctx-style-btn {
@@ -410,25 +526,29 @@
       justify-content: center;
       background: none;
       border: 1px solid var(--border);
-      color: var(--text);
-      font-size: 14px;
+      color: var(--text-dim);
+      font-size: 13px;
+      font-weight: 600;
       cursor: pointer;
       border-radius: 6px;
-      transition: background 0.15s;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
       flex-shrink: 0;
+      font-family: var(--font);
     }
-    .ctx-style-btn:active { background: var(--surface2); }
-    .ctx-style-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .ctx-style-btn:active { background: var(--surface2); color: var(--text); }
+    .ctx-style-btn.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
     .ctx-font-select {
       background: var(--surface2);
       border: 1px solid var(--border);
       color: var(--text);
       font-size: 13px;
-      padding: 4px 8px;
+      font-weight: 500;
+      padding: 5px 8px;
       border-radius: 6px;
       cursor: pointer;
       outline: none;
-      min-width: 110px;
+      min-width: 100px;
+      font-family: var(--font);
     }
     .ctx-font-select:focus { border-color: var(--accent); }
     .ctx-align-btn {
@@ -439,21 +559,20 @@
       justify-content: center;
       background: none;
       border: 1px solid var(--border);
-      color: var(--text);
-      font-size: 14px;
+      color: var(--text-dim);
       cursor: pointer;
       border-radius: 6px;
-      transition: background 0.15s;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
       flex-shrink: 0;
     }
-    .ctx-align-btn:active { background: var(--surface2); }
-    .ctx-align-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .ctx-align-btn:active { background: var(--surface2); color: var(--text); }
+    .ctx-align-btn.active { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
 
     /* ── BG picker ── */
     #bg-picker {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.7);
       display: none;
       z-index: 60;
       align-items: flex-end;
@@ -466,6 +585,14 @@
       width: 100%;
       max-width: 400px;
       padding: 0 0 calc(var(--safe-bottom) + 16px);
+      border-top: 1px solid var(--border);
+    }
+    .bg-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--surface3);
+      border-radius: 2px;
+      margin: 8px auto 0;
     }
     .sheet-tabs {
       display: flex;
@@ -473,13 +600,15 @@
     }
     .sheet-tab {
       flex: 1;
-      padding: 12px;
+      padding: 14px;
       text-align: center;
       font-size: 14px;
+      font-weight: 500;
       color: var(--text-dim);
       cursor: pointer;
       border-bottom: 2px solid transparent;
-      transition: color 0.15s;
+      transition: color 0.15s, border-color 0.15s;
+      margin-bottom: -1px;
     }
     .sheet-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
     .sheet-tab:active { background: var(--surface2); }
@@ -489,18 +618,21 @@
     .color-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      margin-bottom: 14px;
+      gap: 12px;
+      margin-bottom: 16px;
     }
     .color-row input[type="color"] {
       width: 48px;
       height: 48px;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
-      background: none;
       padding: 0;
+      background: none;
     }
+    .color-info { flex: 1; }
+    .color-info-title { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+    .color-info-sub { font-size: 12px; color: var(--text-dim); }
     .swatch-row {
       display: flex;
       gap: 8px;
@@ -511,53 +643,57 @@
       height: 36px;
       border-radius: 8px;
       cursor: pointer;
-      border: 2px solid var(--border);
-      transition: transform 0.15s;
+      border: 2px solid transparent;
+      transition: transform 0.15s, border-color 0.15s;
     }
     .swatch:active { transform: scale(0.92); }
     .swatch.selected { border-color: var(--accent); }
     .quick-presets {
       display: flex;
       gap: 8px;
-      margin-top: 10px;
+      margin-top: 12px;
     }
     .preset-btn {
       flex: 1;
-      padding: 8px 4px;
+      padding: 9px 4px;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 8px;
       color: var(--text);
       font-size: 12px;
+      font-weight: 500;
       cursor: pointer;
       text-align: center;
+      transition: background 0.15s, border-color 0.15s;
     }
-    .preset-btn:active { background: var(--border); }
+    .preset-btn:active { background: var(--surface3); }
 
     .grad-type-row {
       display: flex;
       gap: 8px;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
     }
     .grad-type-btn {
       flex: 1;
-      padding: 8px;
+      padding: 10px;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 8px;
       color: var(--text-dim);
       font-size: 13px;
+      font-weight: 500;
       cursor: pointer;
       text-align: center;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
-    .grad-type-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .grad-type-btn.active { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
     .angle-row {
       display: flex;
       align-items: center;
       gap: 10px;
       margin-bottom: 14px;
     }
-    .angle-row label { font-size: 12px; color: var(--text-dim); min-width: 50px; }
+    .angle-row label { font-size: 12px; color: var(--text-dim); min-width: 44px; font-weight: 500; }
     .angle-row input[type="range"] { flex: 1; }
     .angle-row span { font-size: 12px; color: var(--text-dim); min-width: 36px; text-align: right; }
     .stop-row {
@@ -566,34 +702,35 @@
       gap: 10px;
       margin-bottom: 12px;
     }
-    .stop-row label { font-size: 12px; color: var(--text-dim); }
+    .stop-row label { font-size: 12px; color: var(--text-dim); min-width: 50px; font-weight: 500; }
     .stop-row input[type="color"] { width: 40px; height: 40px; border: none; border-radius: 8px; cursor: pointer; padding: 0; background: none; }
     .preset-grad-row {
       display: flex;
       gap: 8px;
-      margin-top: 8px;
+      margin-top: 12px;
     }
     .preset-grad {
       flex: 1;
       height: 48px;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
       border: 2px solid var(--border);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 10px;
-      color: rgba(255,255,255,0.7);
-      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-      font-weight: 600;
+      font-size: 11px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.85);
+      text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+      transition: border-color 0.15s, transform 0.15s;
     }
-    .preset-grad:active { border-color: var(--accent); }
+    .preset-grad:active { border-color: var(--accent); transform: scale(0.98); }
 
     /* ── Export picker ── */
     #export-picker {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.7);
       display: none;
       z-index: 60;
       align-items: flex-end;
@@ -606,18 +743,27 @@
       width: 100%;
       max-width: 400px;
       padding: 0 0 calc(var(--safe-bottom) + 16px);
+      border-top: 1px solid var(--border);
+    }
+    .export-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--surface3);
+      border-radius: 2px;
+      margin: 8px auto 0;
     }
     .export-section {
-      padding: 12px 16px;
+      padding: 14px 16px;
       border-bottom: 1px solid var(--border);
     }
     .export-section:last-of-type { border-bottom: none; }
     .export-label {
       font-size: 11px;
+      font-weight: 600;
       color: var(--text-dim);
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
     .format-cards {
       display: flex;
@@ -627,23 +773,24 @@
       flex: 1;
       padding: 10px 6px;
       background: var(--surface2);
-      border: 2px solid var(--border);
+      border: 1px solid var(--border);
       border-radius: 10px;
       cursor: pointer;
       text-align: center;
       font-size: 13px;
+      font-weight: 500;
       color: var(--text);
-      transition: background 0.15s, border-color 0.15s;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
-    .format-card:active { background: var(--border); }
-    .format-card.selected { border-color: var(--accent); color: var(--accent); }
+    .format-card:active { background: var(--surface3); }
+    .format-card.selected { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
     .size-btns {
       display: flex;
       gap: 8px;
     }
     .size-btn {
       flex: 1;
-      padding: 8px 6px;
+      padding: 10px 6px;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -652,78 +799,237 @@
       font-size: 12px;
       color: var(--text);
       line-height: 1.3;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
-    .size-btn:active { background: var(--border); }
-    .size-btn.selected { border-color: var(--accent); color: var(--accent); }
-    .size-btn .size-sub { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+    .size-btn:active { background: var(--surface3); }
+    .size-btn.selected { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+    .size-btn .size-sub { font-size: 10px; color: var(--text-dim); margin-top: 2px; font-weight: 400; }
+    .size-btn.selected .size-sub { color: var(--accent); opacity: 0.7; }
     .dpi-btns {
       display: flex;
       gap: 8px;
     }
     .dpi-btn {
       flex: 1;
-      padding: 8px;
+      padding: 10px;
       background: var(--surface2);
       border: 1px solid var(--border);
       border-radius: 8px;
       cursor: pointer;
       text-align: center;
       font-size: 13px;
+      font-weight: 500;
       color: var(--text);
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
-    .dpi-btn:active { background: var(--border); }
-    .dpi-btn.selected { border-color: var(--accent); color: var(--accent); }
+    .dpi-btn:active { background: var(--surface3); }
+    .dpi-btn.selected { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
     #quality-row {
       display: flex;
       align-items: center;
       gap: 10px;
     }
-    #quality-row label { font-size: 12px; color: var(--text-dim); min-width: 50px; }
+    #quality-row label { font-size: 12px; color: var(--text-dim); min-width: 44px; font-weight: 500; }
     #quality-row input[type="range"] { flex: 1; }
     #quality-row span { font-size: 12px; color: var(--text-dim); min-width: 30px; }
     .export-do-btn {
-      margin: 12px 16px 0;
+      margin: 14px 16px 0;
       width: calc(100% - 32px);
       padding: 14px;
       background: var(--accent);
       border: none;
       border-radius: 10px;
       color: #fff;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.15s, opacity 0.15s;
     }
     .export-do-btn:active { opacity: 0.85; }
+
+    /* ── Back button ── */
+    #btn-back {
+      width: 36px;
+    }
+
+    /* ── ctx-bar layer buttons ── */
+    .ctx-layer-btn {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.15s, color 0.15s;
+      flex-shrink: 0;
+    }
+    .ctx-layer-btn:active { background: var(--surface2); color: var(--text); }
   </style>
 </head>
 <body>
 
+<!-- SVG Icon Definitions -->
+<svg style="display:none">
+  <defs>
+    <!-- Undo -->
+    <symbol id="icon-undo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 0 2.5-6.5L3 9"/>
+    </symbol>
+    <!-- Redo -->
+    <symbol id="icon-redo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 7v6h-6"/><path d="M21 13a9 9 0 1 1-2.5-6.5L21 9"/>
+    </symbol>
+    <!-- Image/Photo -->
+    <symbol id="icon-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <circle cx="8.5" cy="8.5" r="1.5"/>
+      <path d="M21 15l-5-5L5 21"/>
+    </symbol>
+    <!-- Text -->
+    <symbol id="icon-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/>
+    </symbol>
+    <!-- Shape/Hexagon -->
+    <symbol id="icon-shape" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2l8.5 5v10L12 22l-8.5-5V7z"/>
+    </symbol>
+    <!-- Background/Paint bucket -->
+    <symbol id="icon-bg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 11H5a4 4 0 0 0-4 4v0a4 4 0 0 0 4 4h.5a1.5 1.5 0 0 1 1.5 1.5v.5"/>
+      <path d="M12 11V3"/><path d="M8 7l4-4 4 4"/>
+      <circle cx="12" cy="18" r="3"/>
+    </symbol>
+    <!-- Download/Export -->
+    <symbol id="icon-export" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+    </symbol>
+    <!-- More/Menu -->
+    <symbol id="icon-more" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>
+    </symbol>
+    <!-- Close/X -->
+    <symbol id="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </symbol>
+    <!-- Delete/Trash -->
+    <symbol id="icon-delete" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+    </symbol>
+    <!-- Chevron down -->
+    <symbol id="icon-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 9 12 15 18 9"/>
+    </symbol>
+    <!-- Chevron up -->
+    <symbol id="icon-chevron-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="18 15 12 9 6 15"/>
+    </symbol>
+    <!-- Upload -->
+    <symbol id="icon-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+    </symbol>
+    <!-- Link -->
+    <symbol id="icon-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+    </symbol>
+    <!-- Check -->
+    <symbol id="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </symbol>
+    <!-- Warning -->
+    <symbol id="icon-warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+    </symbol>
+    <!-- Bold -->
+    <symbol id="icon-bold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/>
+    </symbol>
+    <!-- Italic -->
+    <symbol id="icon-italic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/>
+    </symbol>
+    <!-- Underline -->
+    <symbol id="icon-underline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"/><line x1="4" y1="21" x2="20" y2="21"/>
+    </symbol>
+    <!-- Align left -->
+    <symbol id="icon-align-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="17" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="17" y1="18" x2="3" y2="18"/>
+    </symbol>
+    <!-- Align center -->
+    <symbol id="icon-align-center" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="10" x2="6" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="18" y1="18" x2="6" y2="18"/>
+    </symbol>
+    <!-- Align right -->
+    <symbol id="icon-align-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="21" y1="10" x2="7" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="7" y2="18"/>
+    </symbol>
+    <!-- Clipboard/Templates -->
+    <symbol id="icon-clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>
+    </symbol>
+    <!-- Info -->
+    <symbol id="icon-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+    </symbol>
+    <!-- Refresh/Reset -->
+    <symbol id="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+    </symbol>
+    <!-- Arrow left/Back -->
+    <symbol id="icon-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+    </symbol>
+  </defs>
+</svg>
+
 <!-- Loading overlay -->
 <div id="loading">
+  <div class="loading-logo">Poster Designer</div>
   <div class="spinner"></div>
-  <div style="color:var(--text-dim);font-size:13px;">Connecting to server…</div>
+  <div class="loading-text">Connecting to server…</div>
 </div>
 
 <!-- Error banner -->
 <div id="error-banner">
-  <span>⚠️</span><span id="error-msg">Server unreachable</span>
+  <svg class="svg-icon-xs" style="flex-shrink:0"><use href="#icon-warning"/></svg>
+  <span id="error-msg">Server unreachable</span>
 </div>
 
 <!-- Sync flash indicator -->
-<div id="sync-flash">✓ Synced</div>
+<div id="sync-flash">
+  <svg class="svg-icon-xs"><use href="#icon-check"/></svg>
+  Synced
+</div>
 
 <div id="app">
   <!-- Top bar -->
   <header id="top-bar">
     <div class="top-left">
-      <button class="icon-btn" id="btn-back" title="Back">⇦</button>
+      <button class="icon-btn" id="btn-back" title="Back">
+        <svg class="svg-icon"><use href="#icon-arrow-left"/></svg>
+      </button>
       <span class="title" id="doc-title">Poster Designer</span>
-      <span id="conn-status" class="conn-status" title="Connection status">🔴</span>
-      <span id="agent-badge" class="agent-badge" style="display:none">✏️ Nexi is editing…</span>
+      <span id="conn-status" class="conn-dot" title="Connection status"></span>
+      <span id="agent-badge" class="agent-badge">
+        <svg class="svg-icon-xs" style="vertical-align:-3px;margin-right:4px"><use href="#icon-text"/></svg>
+        Nexi is editing…
+      </span>
     </div>
     <div class="top-right">
-      <button class="icon-btn" id="btn-undo" title="Undo (↩)">↩</button>
-      <button class="icon-btn" id="btn-redo" title="Redo (↪)" disabled>↪</button>
+      <button class="icon-btn" id="btn-undo" title="Undo">
+        <svg class="svg-icon"><use href="#icon-undo"/></svg>
+      </button>
+      <button class="icon-btn" id="btn-redo" title="Redo" disabled>
+        <svg class="svg-icon"><use href="#icon-redo"/></svg>
+      </button>
     </div>
   </header>
 
@@ -734,7 +1040,9 @@
 
   <!-- Contextual toolbar (shown when element selected) -->
   <div id="ctx-bar">
-    <button class="icon-btn" id="ctx-delete" title="Delete">🗑</button>
+    <button class="icon-btn" id="ctx-delete" title="Delete">
+      <svg class="svg-icon" style="color:var(--danger)"><use href="#icon-delete"/></svg>
+    </button>
     <span class="ctx-label" id="ctx-label">Size</span>
     <input type="range" class="ctx-slider" id="ctx-size" min="8" max="200" value="24">
     <span class="ctx-label" id="ctx-label2">Color</span>
@@ -742,10 +1050,14 @@
       <input type="color" id="ctx-color" value="#ffffff">
     </div>
     <span class="ctx-label" id="ctx-op-label" style="display:none">Opacity</span>
-    <input type="range" class="ctx-slider" id="ctx-opacity" min="0" max="100" value="100" style="display:none;width:80px;">
-    <button class="icon-btn" id="ctx-bring-fwd" title="Bring Forward" style="display:none">⬆</button>
-    <button class="icon-btn" id="ctx-send-back" title="Send Backward" style="display:none">⬇</button>
-    <div id="ctx-text-options" style="display:none;align-items:center;gap:6px;">
+    <input type="range" class="ctx-slider" id="ctx-opacity" min="0" max="100" value="100" style="display:none;width:70px;">
+    <button class="ctx-layer-btn" id="ctx-bring-fwd" title="Bring Forward" style="display:none">
+      <svg class="svg-icon-xs"><use href="#icon-chevron-up"/></svg>
+    </button>
+    <button class="ctx-layer-btn" id="ctx-send-back" title="Send Backward" style="display:none">
+      <svg class="svg-icon-xs"><use href="#icon-chevron-down"/></svg>
+    </button>
+    <div id="ctx-text-options" style="display:none;align-items:center;gap:5px;">
       <select class="ctx-font-select" id="ctx-font-family">
         <option value="Noto Sans">Noto Sans</option>
         <option value="Arial">Arial</option>
@@ -756,54 +1068,46 @@
         <option value="Verdana">Verdana</option>
         <option value="Comic Sans MS">Comic Sans MS</option>
       </select>
-      <button class="ctx-style-btn" data-style="bold" title="Bold"><b>B</b></button>
-      <button class="ctx-style-btn" data-style="italic" title="Italic"><i>I</i></button>
-      <button class="ctx-style-btn" data-style="underline" title="Underline"><u>U</u></button>
-      <button class="ctx-align-btn" data-align="left">≡</button>
-      <button class="ctx-align-btn" data-align="center">≡</button>
-      <button class="ctx-align-btn" data-align="right">≡</button>
+      <button class="ctx-style-btn" data-style="bold" title="Bold"><svg class="svg-icon-xs"><use href="#icon-bold"/></svg></button>
+      <button class="ctx-style-btn" data-style="italic" title="Italic"><svg class="svg-icon-xs"><use href="#icon-italic"/></svg></button>
+      <button class="ctx-style-btn" data-style="underline" title="Underline"><svg class="svg-icon-xs"><use href="#icon-underline"/></svg></button>
+      <button class="ctx-align-btn" data-align="left" title="Align Left"><svg class="svg-icon-xs"><use href="#icon-align-left"/></svg></button>
+      <button class="ctx-align-btn" data-align="center" title="Align Center"><svg class="svg-icon-xs"><use href="#icon-align-center"/></svg></button>
+      <button class="ctx-align-btn" data-align="right" title="Align Right"><svg class="svg-icon-xs"><use href="#icon-align-right"/></svg></button>
       <span class="ctx-label">Spacing</span>
-      <input type="range" class="ctx-slider" id="ctx-letter-spacing" min="-2" max="10" value="0">
+      <input type="range" class="ctx-slider" id="ctx-letter-spacing" min="-2" max="10" value="0" style="width:60px;">
     </div>
   </div>
 
   <!-- Bottom toolbar -->
   <nav id="bottom-bar">
     <button class="tool-btn" id="btn-image" title="Add Image">
-      🖼️<span>Image</span>
+      <svg class="svg-icon"><use href="#icon-image"/></svg>
+      <span>Image</span>
     </button>
     <button class="tool-btn" id="btn-text" title="Add Text">
-      📝<span>Text</span>
+      <svg class="svg-icon"><use href="#icon-text"/></svg>
+      <span>Text</span>
     </button>
     <button class="tool-btn" id="btn-shape" title="Add Shape">
-      ⬡<span>Shape</span>
+      <svg class="svg-icon"><use href="#icon-shape"/></svg>
+      <span>Shape</span>
     </button>
     <button class="tool-btn" id="btn-bg" title="Background">
-      🎨<span>BG</span>
+      <svg class="svg-icon"><use href="#icon-bg"/></svg>
+      <span>BG</span>
     </button>
     <button class="tool-btn" id="btn-export" title="Export">
-      ⬇️<span>Export</span>
-    </button>
-    <button class="tool-btn" id="btn-more" title="More">
-      ☰<span>More</span>
+      <svg class="svg-icon"><use href="#icon-export"/></svg>
+      <span>Export</span>
     </button>
   </nav>
-</div>
-
-<!-- More menu -->
-<div id="menu-overlay">
-  <div id="menu-sheet">
-    <div class="menu-item" id="menu-templates">📋 Templates</div>
-    <div class="menu-divider"></div>
-    <div class="menu-item" id="menu-about">ℹ️ About</div>
-    <div class="menu-divider"></div>
-    <div class="menu-item danger" id="menu-reset">🔄 New Design</div>
-  </div>
 </div>
 
 <!-- Shape picker -->
 <div id="shape-picker">
   <div id="shape-sheet">
+    <div class="shape-handle"></div>
     <!-- Categories rendered by JS -->
   </div>
 </div>
@@ -811,13 +1115,24 @@
 <!-- Image picker -->
 <div id="image-picker">
   <div id="image-sheet">
+    <div class="image-handle"></div>
     <div class="img-option" id="img-upload">
-      <span class="img-option-icon">📁</span>
-      <span>Upload from Device</span>
+      <div class="img-option-icon">
+        <svg class="svg-icon"><use href="#icon-upload"/></svg>
+      </div>
+      <div>
+        <div class="img-option-text">Upload from Device</div>
+        <div class="img-option-sub">Choose a photo from your files</div>
+      </div>
     </div>
     <div class="img-option" id="img-url">
-      <span class="img-option-icon">🔗</span>
-      <span>Import from URL</span>
+      <div class="img-option-icon">
+        <svg class="svg-icon"><use href="#icon-link"/></svg>
+      </div>
+      <div>
+        <div class="img-option-text">Import from URL</div>
+        <div class="img-option-sub">Paste an image link</div>
+      </div>
     </div>
   </div>
 </div>
@@ -825,20 +1140,21 @@
 <!-- BG picker -->
 <div id="bg-picker">
   <div id="bg-sheet">
+    <div class="bg-handle"></div>
     <div class="sheet-tabs">
       <div class="sheet-tab active" data-tab="solid">Solid Color</div>
       <div class="sheet-tab" data-tab="gradient">Gradient</div>
     </div>
     <div id="bg-solid-panel" class="sheet-panel active">
       <div class="color-row">
-        <input type="color" id="bg-color-input" value="#0D1117">
-        <div>
-          <div style="font-size:13px;color:var(--text);margin-bottom:4px;">Pick a color</div>
-          <div style="font-size:11px;color:var(--text-dim);">Or choose a preset below</div>
+        <input type="color" id="bg-color-input" value="#08090a">
+        <div class="color-info">
+          <div class="color-info-title">Pick a color</div>
+          <div class="color-info-sub">Or choose a preset below</div>
         </div>
       </div>
       <div class="swatch-row">
-        <div class="swatch" style="background:#0D1117" data-color="#0D1117"></div>
+        <div class="swatch" style="background:#08090a" data-color="#08090a"></div>
         <div class="swatch" style="background:#1a1a2e" data-color="#1a1a2e"></div>
         <div class="swatch" style="background:#16213e" data-color="#16213e"></div>
         <div class="swatch" style="background:#0f3460" data-color="#0f3460"></div>
@@ -849,8 +1165,8 @@
         <div class="preset-btn" data-color="#ffffff">White</div>
         <div class="preset-btn" data-color="#000000">Black</div>
         <div class="preset-btn" data-color="#F85149">Red</div>
-        <div class="preset-btn" data-color="#58A6FF">Blue</div>
-        <div class="preset-btn" data-color="#3FB950">Green</div>
+        <div class="preset-btn" data-color="#5e6ad2">Violet</div>
+        <div class="preset-btn" data-color="#3fb950">Green</div>
       </div>
       <button class="export-do-btn" id="bg-apply-btn" style="margin-top:16px;">Apply Background</button>
     </div>
@@ -884,6 +1200,7 @@
 <!-- Export picker -->
 <div id="export-picker">
   <div id="export-sheet">
+    <div class="export-handle"></div>
     <div class="export-section">
       <div class="export-label">Format</div>
       <div class="format-cards">
@@ -896,7 +1213,7 @@
     <div class="export-section" id="quality-row">
       <div class="export-label">Quality</div>
       <div style="display:flex;align-items:center;gap:10px;">
-        <label style="font-size:12px;color:var(--text-dim);min-width:50px;">JPEG</label>
+        <label style="font-size:12px;color:var(--text-dim);min-width:44px;font-weight:500;">JPEG</label>
         <input type="range" id="export-quality" min="1" max="100" value="90">
         <span id="export-quality-val" style="font-size:12px;color:var(--text-dim);min-width:30px;">90%</span>
       </div>
@@ -926,7 +1243,10 @@
         <div class="dpi-btn selected" data-dpi="300">300</div>
       </div>
     </div>
-    <button class="export-do-btn" id="export-do-btn">⬇️ Export Poster</button>
+    <button class="export-do-btn" id="export-do-btn">
+      <svg class="svg-icon-sm"><use href="#icon-export"/></svg>
+      Export Poster
+    </button>
   </div>
 </div>
 
@@ -962,124 +1282,124 @@ function pxToMm(px) { return px / DPI * MM_PER_INCH; }
 var SHAPES = {
   // ── BASIC ──────────────────────────────────────────────────────────────────
   rect: {
-    label: 'Rectangle', category: 'Basic', emoji: '🟪',
+    label: 'Rectangle', category: 'Basic',
     svg: `<rect x="4" y="6" width="20" height="14" rx="2" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Rect({
       left: x, top: y, width: w, height: h,
-      fill: style.fillColor || style.color || '#58A6FF',
+      fill: style.fillColor || style.color || '#5e6ad2',
       originX: 'left', originY: 'top', angle, rx: 4, ry: 4,
     }),
   },
   circle: {
-    label: 'Circle', category: 'Basic', emoji: '⭕',
+    label: 'Circle', category: 'Basic',
     svg: `<circle cx="14" cy="14" r="10" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Circle({
       left: x, top: y, radius: Math.min(w, h) / 2,
-      fill: style.fillColor || style.color || '#58A6FF',
+      fill: style.fillColor || style.color || '#5e6ad2',
       originX: 'left', originY: 'top', angle,
     }),
   },
   triangle: {
-    label: 'Triangle', category: 'Basic', emoji: '🔺',
+    label: 'Triangle', category: 'Basic',
     svg: `<polygon points="14,2 26,26 2,26" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Triangle({
       left: x, top: y, width: w, height: h,
-      fill: style.fillColor || style.color || '#58A6FF',
+      fill: style.fillColor || style.color || '#5e6ad2',
       originX: 'left', originY: 'top', angle,
     }),
   },
   line: {
-    label: 'Line', category: 'Basic', emoji: '➖',
+    label: 'Line', category: 'Basic',
     svg: `<line x1="2" y1="14" x2="26" y2="14" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Line([x, y, x + w, y], {
-      stroke: style.strokeColor || style.color || '#58A6FF',
+      stroke: style.strokeColor || style.color || '#5e6ad2',
       strokeWidth: style.strokeWidth || 3,
     }),
   },
   star: {
-    label: 'Star', category: 'Basic', emoji: '⭐',
+    label: 'Star', category: 'Basic',
     svg: `<polygon points="14,1 17.5,9 26,9 19.5,14.5 22,23 14,18 6,23 8.5,14.5 2,9 10.5,9" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path(
       'M0,-50 L12,-18 L47,-15 L21,9 L29,42 L0,24 L-29,42 L-21,9 L-47,-15 L-12,-18 Z', {
         left: x, top: y, scaleX: w / 100, scaleY: h / 100,
-        fill: style.fillColor || style.color || '#58A6FF',
+        fill: style.fillColor || style.color || '#5e6ad2',
         originX: 'left', originY: 'top', angle,
       }
     ),
   },
   pentagon: {
-    label: 'Pentagon', category: 'Basic', emoji: '⬠',
+    label: 'Pentagon', category: 'Basic',
     svg: `<polygon points="14,1 26,9 22,25 6,25 2,9" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path(
       'M0,-50 L48,-15 L29,41 L-29,41 L-48,-15 Z', {
         left: x, top: y, scaleX: w / 100, scaleY: h / 100,
-        fill: style.fillColor || style.color || '#58A6FF',
+        fill: style.fillColor || style.color || '#5e6ad2',
         originX: 'left', originY: 'top', angle,
       }
     ),
   },
   hexagon: {
-    label: 'Hexagon', category: 'Basic', emoji: '⬡',
+    label: 'Hexagon', category: 'Basic',
     svg: `<polygon points="14,1 25,7 25,21 14,27 3,21 3,7" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path(
       'M0,-50 L43,-25 L43,25 L0,50 L-43,25 L-43,-25 Z', {
         left: x, top: y, scaleX: w / 100, scaleY: h / 100,
-        fill: style.fillColor || style.color || '#58A6FF',
+        fill: style.fillColor || style.color || '#5e6ad2',
         originX: 'left', originY: 'top', angle,
       }
     ),
   },
   octagon: {
-    label: 'Octagon', category: 'Basic', emoji: '🟧',
+    label: 'Octagon', category: 'Basic',
     svg: `<polygon points="7,1 21,1 27,7 27,21 21,27 7,27 1,21 1,7" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path(
       'M-21,-50 L21,-50 L50,-21 L50,21 L21,50 L-21,50 L-50,21 L-50,-21 Z', {
         left: x, top: y, scaleX: w / 100, scaleY: h / 100,
-        fill: style.fillColor || style.color || '#58A6FF',
+        fill: style.fillColor || style.color || '#5e6ad2',
         originX: 'left', originY: 'top', angle,
       }
     ),
   },
   diamond: {
-    label: 'Diamond', category: 'Basic', emoji: '🔷',
+    label: 'Diamond', category: 'Basic',
     svg: `<polygon points="14,1 27,14 14,27 1,14" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path(
       'M0,-50 L40,0 L0,50 L-40,0 Z', {
         left: x, top: y, scaleX: w / 100, scaleY: h / 100,
-        fill: style.fillColor || style.color || '#58A6FF',
+        fill: style.fillColor || style.color || '#5e6ad2',
         originX: 'left', originY: 'top', angle,
       }
     ),
   },
   parallelogram: {
-    label: 'Parallelogram', category: 'Basic', emoji: '▱',
+    label: 'Parallelogram', category: 'Basic',
     svg: `<polygon points="5,5 25,5 20,23 0,23" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path(
       'M-40,-30 L50,-30 L40,30 L-50,30 Z', {
         left: x, top: y, scaleX: w / 100, scaleY: h / 100,
-        fill: style.fillColor || style.color || '#58A6FF',
+        fill: style.fillColor || style.color || '#5e6ad2',
         originX: 'left', originY: 'top', angle,
       }
     ),
   },
   trapezoid: {
-    label: 'Trapezoid', category: 'Basic', emoji: '🔷',
+    label: 'Trapezoid', category: 'Basic',
     svg: `<polygon points="3,7 25,7 20,25 8,25" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path(
       'M-50,-35 L50,-35 L35,35 L-35,35 Z', {
         left: x, top: y, scaleX: w / 100, scaleY: h / 100,
-        fill: style.fillColor || style.color || '#58A6FF',
+        fill: style.fillColor || style.color || '#5e6ad2',
         originX: 'left', originY: 'top', angle,
       }
     ),
   },
   'triangle-right': {
-    label: 'Triangle R', category: 'Basic', emoji: '▶',
+    label: 'Triangle R', category: 'Basic',
     svg: `<polygon points="4,4 24,14 4,24" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path(
       'M-50,-40 L40,-40 L40,40 L-50,-40 Z', {
         left: x, top: y, scaleX: w / 100, scaleY: h / 100,
-        fill: style.fillColor || style.color || '#58A6FF',
+        fill: style.fillColor || style.color || '#5e6ad2',
         originX: 'left', originY: 'top', angle,
       }
     ),
@@ -1087,70 +1407,70 @@ var SHAPES = {
 
   // ── ARROWS ─────────────────────────────────────────────────────────────────
   'arrow-right': {
-    label: 'Arrow →', category: 'Arrows', emoji: '➡',
+    label: 'Arrow →', category: 'Arrows',
     svg: `<polygon points="1,14 21,14 21,6 28,14 21,22 21,14" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path(
       'M-50,0 L30,0 L30,-25 L60,0 L30,25 L30,0 Z', {
         left: x, top: y, scaleX: w / 100, scaleY: h / 100,
-        fill: style.fillColor || style.color || '#58A6FF',
+        fill: style.fillColor || style.color || '#5e6ad2',
         originX: 'left', originY: 'top', angle,
       }
     ),
   },
   'arrow-left': {
-    label: 'Arrow ←', category: 'Arrows', emoji: '⬅',
+    label: 'Arrow ←', category: 'Arrows',
     svg: `<polygon points="27,14 7,14 7,6 0,14 7,22 7,14" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path(
       'M50,0 L-30,0 L-30,-25 L-60,0 L-30,25 L-30,0 Z', {
         left: x, top: y, scaleX: w / 100, scaleY: h / 100,
-        fill: style.fillColor || style.color || '#58A6FF',
+        fill: style.fillColor || style.color || '#5e6ad2',
         originX: 'left', originY: 'top', angle,
       }
     ),
   },
   'arrow-up': {
-    label: 'Arrow ↑', category: 'Arrows', emoji: '⬆',
+    label: 'Arrow ↑', category: 'Arrows',
     svg: `<polygon points="14,1 14,21 6,21 14,28 22,21 14,21" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path(
       'M0,50 L0,-30 L-25,-30 L0,-60 L25,-30 L0,-30 Z', {
         left: x, top: y, scaleX: w / 100, scaleY: h / 100,
-        fill: style.fillColor || style.color || '#58A6FF',
+        fill: style.fillColor || style.color || '#5e6ad2',
         originX: 'left', originY: 'top', angle,
       }
     ),
   },
   'arrow-down': {
-    label: 'Arrow ↓', category: 'Arrows', emoji: '⬇',
+    label: 'Arrow ↓', category: 'Arrows',
     svg: `<polygon points="14,27 14,7 6,7 14,0 22,7 14,7" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path(
       'M0,-50 L0,30 L-25,30 L0,60 L25,30 L0,30 Z', {
         left: x, top: y, scaleX: w / 100, scaleY: h / 100,
-        fill: style.fillColor || style.color || '#58A6FF',
+        fill: style.fillColor || style.color || '#5e6ad2',
         originX: 'left', originY: 'top', angle,
       }
     ),
   },
   'chevron-right': {
-    label: 'Chevron →', category: 'Arrows', emoji: '›',
+    label: 'Chevron →', category: 'Arrows',
     svg: `<polyline points="4,5 20,14 4,23" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path(
       'M-30,-40 L10,-40 L50,0 L10,40 L-30,40 L-50,0 Z', {
         left: x, top: y, scaleX: w / 100, scaleY: h / 100,
         fill: 'transparent',
-        stroke: style.strokeColor || style.color || '#58A6FF',
+        stroke: style.strokeColor || style.color || '#5e6ad2',
         strokeWidth: 3, strokeLineCap: 'round', strokeLineJoin: 'round',
         originX: 'left', originY: 'top', angle,
       }
     ),
   },
   'chevron-left': {
-    label: 'Chevron ←', category: 'Arrows', emoji: '‹',
+    label: 'Chevron ←', category: 'Arrows',
     svg: `<polyline points="24,5 8,14 24,23" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path(
       'M30,-40 L-10,-40 L-50,0 L-10,40 L30,40 L50,0 Z', {
         left: x, top: y, scaleX: w / 100, scaleY: h / 100,
         fill: 'transparent',
-        stroke: style.strokeColor || style.color || '#58A6FF',
+        stroke: style.strokeColor || style.color || '#5e6ad2',
         strokeWidth: 3, strokeLineCap: 'round', strokeLineJoin: 'round',
         originX: 'left', originY: 'top', angle,
       }
@@ -1159,67 +1479,67 @@ var SHAPES = {
 
   // ── SYMBOLS ────────────────────────────────────────────────────────────────
   heart: {
-    label: 'Heart', category: 'Symbols', emoji: '❤️',
+    label: 'Heart', category: 'Symbols',
     svg: `<path d="M14,26 C14,26 2,16 2,9 C2,3 7,1 11,4 C13,5.5 14,7.5 14,7.5 C14,7.5 15,5.5 17,4 C21,1 26,3 26,9 C26,16 14,26 14,26Z" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path(
       'M0,35 C0,35 -50,-15 -50,-30 C-50,-50 -25,-50 0,-30 C25,-50 50,-50 50,-30 C50,-15 0,35 0,35 Z', {
         left: x, top: y, scaleX: w / 100, scaleY: h / 100,
-        fill: style.fillColor || style.color || '#58A6FF',
+        fill: style.fillColor || style.color || '#5e6ad2',
         originX: 'left', originY: 'top', angle,
       }
     ),
   },
   cross: {
-    label: 'Cross', category: 'Symbols', emoji: '✚',
+    label: 'Cross', category: 'Symbols',
     svg: `<polygon points="10,1 20,1 20,10 29,10 29,1 39,1 39,11 29,20 29,29 20,29 20,39 10,39 10,29 1,20 1,11 10,11" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path(
       'M-30,-50 L30,-50 L30,-30 L50,-30 L50,30 L30,30 L30,50 L-30,50 L-30,30 L-50,30 L-50,-30 L-30,-30 Z', {
         left: x, top: y, scaleX: w / 100, scaleY: h / 100,
-        fill: style.fillColor || style.color || '#58A6FF',
+        fill: style.fillColor || style.color || '#5e6ad2',
         originX: 'left', originY: 'top', angle,
       }
     ),
   },
   plus: {
-    label: 'Plus', category: 'Symbols', emoji: '➕',
+    label: 'Plus', category: 'Symbols',
     svg: `<line x1="14" y1="2" x2="14" y2="26" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><line x1="2" y1="14" x2="26" y2="14" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path('M-50,0 L50,0 M0,-50 L0,50', {
       left: x, top: y, scaleX: w / 100, scaleY: h / 100,
       fill: 'transparent',
-      stroke: style.strokeColor || style.color || '#58A6FF',
+      stroke: style.strokeColor || style.color || '#5e6ad2',
       strokeWidth: 4, strokeLineCap: 'round',
       originX: 'left', originY: 'top', angle,
     }),
   },
   minus: {
-    label: 'Minus', category: 'Symbols', emoji: '➖',
+    label: 'Minus', category: 'Symbols',
     svg: `<line x1="2" y1="14" x2="26" y2="14" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path('M-50,0 L50,0', {
       left: x, top: y, scaleX: w / 100, scaleY: h / 100,
       fill: 'transparent',
-      stroke: style.strokeColor || style.color || '#58A6FF',
+      stroke: style.strokeColor || style.color || '#5e6ad2',
       strokeWidth: 4, strokeLineCap: 'round',
       originX: 'left', originY: 'top', angle,
     }),
   },
   'bracket-right': {
-    label: 'Bracket ]', category: 'Symbols', emoji: ']',
+    label: 'Bracket ]', category: 'Symbols',
     svg: `<polyline points="22,4 8,4 8,24 22,24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path('M20,-50 L-35,-50 L-35,50 L20,50', {
       left: x, top: y, scaleX: w / 100, scaleY: h / 100,
       fill: 'transparent',
-      stroke: style.strokeColor || style.color || '#58A6FF',
+      stroke: style.strokeColor || style.color || '#5e6ad2',
       strokeWidth: 4, strokeLineCap: 'round', strokeLineJoin: 'round',
       originX: 'left', originY: 'top', angle,
     }),
   },
   'bracket-left': {
-    label: 'Bracket [', category: 'Symbols', emoji: '[',
+    label: 'Bracket [', category: 'Symbols',
     svg: `<polyline points="6,4 20,4 20,24 6,24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path('M-20,-50 L35,-50 L35,50 L-20,50', {
       left: x, top: y, scaleX: w / 100, scaleY: h / 100,
       fill: 'transparent',
-      stroke: style.strokeColor || style.color || '#58A6FF',
+      stroke: style.strokeColor || style.color || '#5e6ad2',
       strokeWidth: 4, strokeLineCap: 'round', strokeLineJoin: 'round',
       originX: 'left', originY: 'top', angle,
     }),
@@ -1227,29 +1547,29 @@ var SHAPES = {
 
   // ── NATURE ─────────────────────────────────────────────────────────────────
   cloud: {
-    label: 'Cloud', category: 'Nature', emoji: '☁',
+    label: 'Cloud', category: 'Nature',
     svg: `<path d="M7,22 C3,22 1,18 3,15 C1,10 6,6 12,8 C15,2 23,2 26,8 C32,6 37,11 35,16 L35,24 L3,24 Z" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path(
       'M-40,20 C-55,20 -60,5 -50,0 C-55,-15 -35,-20 -20,-10 C-10,-25 20,-25 30,-10 C50,-15 55,5 40,20 L40,35 L-40,35 Z', {
         left: x, top: y, scaleX: w / 100, scaleY: h / 100,
-        fill: style.fillColor || style.color || '#58A6FF',
+        fill: style.fillColor || style.color || '#5e6ad2',
         originX: 'left', originY: 'top', angle,
       }
     ),
   },
   moon: {
-    label: 'Moon', category: 'Nature', emoji: '🌙',
+    label: 'Moon', category: 'Nature',
     svg: `<path d="M22,4 C16,4 12,9 14,16 C16,23 23,27 28,24 C20,28 10,20 12,9 C14,0 20,-2 22,4Z" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path(
       'M20,-45 C40,-45 50,-20 40,5 C50,25 30,45 5,45 C-25,45 -40,15 -30,-15 C-20,-40 0,-45 20,-45 Z', {
         left: x, top: y, scaleX: w / 100, scaleY: h / 100,
-        fill: style.fillColor || style.color || '#58A6FF',
+        fill: style.fillColor || style.color || '#5e6ad2',
         originX: 'left', originY: 'top', angle,
       }
     ),
   },
   sun: {
-    label: 'Sun', category: 'Nature', emoji: '☀',
+    label: 'Sun', category: 'Nature',
     svg: `<line x1="14" y1="1" x2="14" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="14" y1="23" x2="14" y2="27" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="1" y1="14" x2="5" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="23" y1="14" x2="27" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="14" cy="14" r="5" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => {
       const centerX = x + w / 2, centerY = y + h / 2;
@@ -1278,12 +1598,12 @@ var SHAPES = {
     },
   },
   drop: {
-    label: 'Droplet', category: 'Nature', emoji: '💧',
+    label: 'Droplet', category: 'Nature',
     svg: `<path d="M14,2 C22,10 27,17 14,27 C1,17 6,10 14,2Z" fill="currentColor"/>`,
     fabric: (style, x, y, w, h, angle) => new fabric.Path(
       'M0,-50 C25,-20 50,20 0,50 C-50,20 -25,-20 0,-50 Z', {
         left: x, top: y, scaleX: w / 100, scaleY: h / 100,
-        fill: style.fillColor || style.color || '#58A6FF',
+        fill: style.fillColor || style.color || '#5e6ad2',
         originX: 'left', originY: 'top', angle,
       }
     ),
@@ -1296,7 +1616,7 @@ var SHAPE_CATEGORIES = ['Basic', 'Arrows', 'Symbols', 'Nature'];
 // Render the shape picker categories HTML
 function renderShapePicker() {
   const sheet = document.getElementById('shape-sheet');
-  sheet.innerHTML = '';
+  sheet.innerHTML = '<div class="shape-handle"></div>';
 
   for (const cat of SHAPE_CATEGORIES) {
     const shapes = Object.entries(SHAPES).filter(([, s]) => s.category === cat);
@@ -1309,7 +1629,7 @@ function renderShapePicker() {
     catDiv.innerHTML = `
       <div class="shape-category-header">
         <span class="shape-category-title">${cat}</span>
-        <span class="shape-category-chevron">▼</span>
+        <svg class="svg-icon-xs shape-category-chevron"><use href="#icon-chevron-down"/></svg>
       </div>
       <div class="shape-category-items">
         ${shapes.map(([id, s]) => `
@@ -1355,7 +1675,7 @@ async function addShapeToCanvas(shapeId) {
       body: JSON.stringify({
         type: 'shape',
         shape: shapeId,
-        style: { color: '#58A6FF', fillColor: '#58A6FF', strokeColor: '#58A6FF' },
+        style: { color: '#5e6ad2', fillColor: '#5e6ad2', strokeColor: '#5e6ad2' },
         position: { x: 80, y: 80, width: 60, height: 60 },
       }),
     });
@@ -1531,7 +1851,7 @@ function addElementToCanvas(el, selectIt = true) {
       // Fallback to rect
       obj = new fabric.Rect({
         left: x, top: y, width: w, height: h,
-        fill: style.fillColor || style.color || '#58A6FF',
+        fill: style.fillColor || style.color || '#5e6ad2',
         originX: 'left', originY: 'top', angle,
       });
     }
@@ -1613,7 +1933,7 @@ function updateContextBar() {
     });
   } else if (active.type === 'circle' || active.type === 'rect' || active.type === 'triangle') {
     sizeInput.value = Math.round((active.width || 50));
-    colorInput.value = active.fill || '#58A6FF';
+    colorInput.value = active.fill || '#5e6ad2';
     ctxLabel.textContent = 'Width';
     document.getElementById('ctx-label2').textContent = 'Fill';
   }
@@ -1986,7 +2306,7 @@ document.getElementById('btn-bg').addEventListener('click', () => {
   // Sync current background to picker
   const bg = currentState?.background;
   if (bg && bg.type === 'solid') {
-    document.getElementById('bg-color-input').value = bg.color || '#0D1117';
+    document.getElementById('bg-color-input').value = bg.color || '#08090a';
     switchBgTab('solid');
   } else if (bg && bg.type === 'gradient' && bg.gradient) {
     const g = bg.gradient;
@@ -2191,53 +2511,6 @@ document.getElementById('export-do-btn').addEventListener('click', async () => {
   }
 });
 
-// Toolbar: More
-document.getElementById('btn-more').addEventListener('click', () => {
-  document.getElementById('menu-overlay').classList.add('visible');
-});
-
-// Close menus
-document.getElementById('menu-overlay').addEventListener('click', (e) => {
-  if (e.target.id === 'menu-overlay') hideMenu();
-});
-
-document.getElementById('menu-templates').addEventListener('click', async () => {
-  hideMenu();
-  const tpl = prompt('Enter template name:\nA4, A3, Square, Mobile, Wide', 'A4');
-  if (!tpl) return;
-  try {
-    const res = await fetch(`${SERVER}/api/template`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: tpl, agent: 'pwa' }),
-    });
-    if (!res.ok) throw new Error();
-    await loadState();
-  } catch {
-    showError('Failed to apply template');
-  }
-});
-
-document.getElementById('menu-about').addEventListener('click', () => {
-  hideMenu();
-  alert('Poster Designer\nv0.1.0 — PWA Edition\nMobile-first Fabric.js canvas');
-});
-
-document.getElementById('menu-reset').addEventListener('click', async () => {
-  hideMenu();
-  if (!confirm('Start a new design? Current work will be lost.')) return;
-  try {
-    await fetch(`${SERVER}/api/template`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'A4', agent: 'pwa' }),
-    });
-    await loadState();
-  } catch {
-    showError('Failed to reset');
-  }
-});
-
 // Undo
 document.getElementById('btn-undo').addEventListener('click', async () => {
   try {
@@ -2320,10 +2593,11 @@ function connectRealtime() {
       }, 300);
     })
     .subscribe((status) => {
+      const connDot = document.getElementById('conn-status');
       if (status === 'SUBSCRIBED') {
-        document.getElementById('conn-status').textContent = '🟢';
+        connDot.classList.add('connected');
       } else if (status === 'CHANNEL_ERROR') {
-        document.getElementById('conn-status').textContent = '🔴';
+        connDot.classList.remove('connected');
       }
     });
 }
@@ -2334,7 +2608,7 @@ function handleRealtimeEvent(data) {
 
   switch (type) {
     case 'compose_complete':
-      showNotification('✓ Poster composed!');
+      showNotification('Poster composed!');
       break;
 
     case 'agent_editing':
@@ -2364,11 +2638,12 @@ async function refreshCanvas() {
 // Show agent editing indicator
 function showAgentIndicator(action) {
   const badge = document.getElementById('agent-badge');
-  badge.textContent = `✏️ Nexi: ${action || 'editing…'}`;
-  badge.style.display = 'inline';
+  badge.textContent = '';
+  badge.innerHTML = `<svg class="svg-icon-xs" style="vertical-align:-3px;margin-right:4px"><use href="#icon-text"/></svg> Nexi: ${action || 'editing…'}`;
+  badge.classList.add('visible');
   if (agentBadgeTimer) clearTimeout(agentBadgeTimer);
   agentBadgeTimer = setTimeout(() => {
-    badge.style.display = 'none';
+    badge.classList.remove('visible');
   }, 5000);
 }
 
@@ -2384,8 +2659,8 @@ function triggerSyncFlash() {
 // Simple notification
 function showNotification(msg) {
   const el = document.createElement('div');
-  el.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:#58A6FF;color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;z-index:300;animation:fadeIn 0.2s';
-  el.textContent = msg;
+  el.style.cssText = 'position:fixed;top:80px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:500;z-index:300;animation:fadeIn 0.2s;display:flex;align-items:center;gap:8px;';
+  el.innerHTML = `<svg class="svg-icon-xs" style="flex-shrink:0"><use href="#icon-check"/></svg>${msg}`;
   document.body.appendChild(el);
   setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.5s'; setTimeout(() => el.remove(), 500); }, 2500);
 }
