@@ -1,0 +1,429 @@
+{
+  "version": 1,
+  "edited_by": null,
+  "last_updated": "2026-05-16T17:44:46.121061+00:00",
+  "meta": {
+    "template": "Square",
+    "width_mm": 200,
+    "height_mm": 200,
+    "dpi": 300,
+    "width_px": 2362,
+    "height_px": 2362
+  },
+  "background": {
+    "type": "solid",
+    "color": "#1a1a2e"
+  },
+  "elements": [
+    {
+      "id": "el_001",
+      "type": "text",
+      "content": "Grand Opening",
+      "style": {
+        "fontFamily": "Noto Sans",
+        "fontSize": 24,
+        "fontWeight": "400",
+        "color": "#000000",
+        "textAlign": "left",
+        "lineHeight": 1.4,
+        "letterSpacing": 0
+      },
+      "position": {
+        "x": 100.0,
+        "y": 50.0
+      },
+      "layer": 0,
+      "locked": false,
+      "visible": true,
+      "group": null
+    },
+    {
+      "id": "el_002",
+      "type": "text",
+      "content": "Join us for the celebration",
+      "style": {
+        "fontFamily": "Noto Sans",
+        "fontSize": 26,
+        "fontWeight": "400",
+        "color": "#000000",
+        "textAlign": "left",
+        "lineHeight": 1.4,
+        "letterSpacing": 0
+      },
+      "position": {
+        "x": 100.0,
+        "y": 110.0
+      },
+      "layer": 1,
+      "locked": false,
+      "visible": true,
+      "group": null
+    },
+    {
+      "id": "el_003",
+      "type": "shape",
+      "content": "",
+      "style": {
+        "fontFamily": "Noto Sans",
+        "fontSize": 24,
+        "fontWeight": "400",
+        "color": "#000000",
+        "textAlign": "left",
+        "lineHeight": 1.4,
+        "letterSpacing": 0
+      },
+      "position": {
+        "x": 0.0,
+        "y": 0.0
+      },
+      "layer": 2,
+      "locked": false,
+      "visible": true,
+      "group": null
+    },
+    {
+      "id": "el_004",
+      "type": "text",
+      "content": "Grand Opening",
+      "style": {
+        "fontSize": 48,
+        "fontWeight": "bold",
+        "color": "#ffd700",
+        "textAlign": "center"
+      },
+      "position": {
+        "x": 148,
+        "y": 50,
+        "width": 200,
+        "height": 60
+      },
+      "layer": 3,
+      "locked": false,
+      "visible": true,
+      "group": null
+    },
+    {
+      "id": "el_005",
+      "type": "text",
+      "content": "海報設計",
+      "style": {
+        "fontSize": 24,
+        "color": "#ffffff",
+        "textAlign": "center"
+      },
+      "position": {
+        "x": 148,
+        "y": 100,
+        "width": 200,
+        "height": 30
+      },
+      "layer": 4,
+      "locked": false,
+      "visible": true,
+      "group": null
+    }
+  ],
+  "history": [
+    {
+      "timestamp": "2026-05-16T17:37:34.486933+00:00",
+      "agent": "api",
+      "action": "undo",
+      "element_id": null,
+      "snapshot": {
+        "version": 1,
+        "edited_by": null,
+        "last_updated": "2026-05-16T17:35:33.187643+00:00",
+        "meta": {
+          "template": "Square",
+          "width_mm": 200,
+          "height_mm": 200,
+          "dpi": 300,
+          "width_px": 2362,
+          "height_px": 2362
+        },
+        "background": {
+          "type": "solid",
+          "color": "#ffffff",
+          "gradient": null,
+          "image": null
+        },
+        "elements": [
+          {
+            "id": "el_001",
+            "type": "text",
+            "content": "Grand Opening",
+            "style": {
+              "fontFamily": "Noto Sans",
+              "fontSize": 24,
+              "fontWeight": "400",
+              "color": "#000000",
+              "textAlign": "left",
+              "lineHeight": 1.4,
+              "letterSpacing": 0
+            },
+            "position": {
+              "x": 100.0,
+              "y": 50.0
+            },
+            "layer": 0,
+            "locked": false,
+            "visible": true,
+            "group": null
+          },
+          {
+            "id": "el_002",
+            "type": "text",
+            "content": "Join us for the celebration",
+            "style": {
+              "fontFamily": "Noto Sans",
+              "fontSize": 26,
+              "fontWeight": "400",
+              "color": "#000000",
+              "textAlign": "left",
+              "lineHeight": 1.4,
+              "letterSpacing": 0
+            },
+            "position": {
+              "x": 100.0,
+              "y": 110.0
+            },
+            "layer": 1,
+            "locked": false,
+            "visible": true,
+            "group": null
+          },
+          {
+            "id": "el_003",
+            "type": "shape",
+            "content": "",
+            "style": {
+              "fontFamily": "Noto Sans",
+              "fontSize": 24,
+              "fontWeight": "400",
+              "color": "#000000",
+              "textAlign": "left",
+              "lineHeight": 1.4,
+              "letterSpacing": 0
+            },
+            "position": {
+              "x": 0.0,
+              "y": 0.0
+            },
+            "layer": 2,
+            "locked": false,
+            "visible": true,
+            "group": null
+          }
+        ],
+        "history": []
+      }
+    },
+    {
+      "timestamp": "2026-05-16T17:44:46.118861+00:00",
+      "agent": "system",
+      "action": "set_background",
+      "element_id": null,
+      "snapshot": {
+        "version": 1,
+        "edited_by": null,
+        "last_updated": "2026-05-16T17:37:34.486977+00:00",
+        "meta": {
+          "template": "Square",
+          "width_mm": 200,
+          "height_mm": 200,
+          "dpi": 300,
+          "width_px": 2362,
+          "height_px": 2362
+        },
+        "background": {
+          "type": "solid",
+          "color": "#ffffff",
+          "gradient": null,
+          "image": null
+        },
+        "elements": [
+          {
+            "id": "el_001",
+            "type": "text",
+            "content": "Grand Opening",
+            "style": {
+              "fontFamily": "Noto Sans",
+              "fontSize": 24,
+              "fontWeight": "400",
+              "color": "#000000",
+              "textAlign": "left",
+              "lineHeight": 1.4,
+              "letterSpacing": 0
+            },
+            "position": {
+              "x": 100.0,
+              "y": 50.0
+            },
+            "layer": 0,
+            "locked": false,
+            "visible": true,
+            "group": null
+          },
+          {
+            "id": "el_002",
+            "type": "text",
+            "content": "Join us for the celebration",
+            "style": {
+              "fontFamily": "Noto Sans",
+              "fontSize": 26,
+              "fontWeight": "400",
+              "color": "#000000",
+              "textAlign": "left",
+              "lineHeight": 1.4,
+              "letterSpacing": 0
+            },
+            "position": {
+              "x": 100.0,
+              "y": 110.0
+            },
+            "layer": 1,
+            "locked": false,
+            "visible": true,
+            "group": null
+          },
+          {
+            "id": "el_003",
+            "type": "shape",
+            "content": "",
+            "style": {
+              "fontFamily": "Noto Sans",
+              "fontSize": 24,
+              "fontWeight": "400",
+              "color": "#000000",
+              "textAlign": "left",
+              "lineHeight": 1.4,
+              "letterSpacing": 0
+            },
+            "position": {
+              "x": 0.0,
+              "y": 0.0
+            },
+            "layer": 2,
+            "locked": false,
+            "visible": true,
+            "group": null
+          }
+        ],
+        "history": []
+      }
+    },
+    {
+      "timestamp": "2026-05-16T17:44:46.120871+00:00",
+      "agent": "system",
+      "action": "add_element",
+      "element_id": "el_004",
+      "snapshot": {
+        "version": 1,
+        "edited_by": null,
+        "last_updated": "2026-05-16T17:44:46.119986+00:00",
+        "meta": {
+          "template": "Square",
+          "width_mm": 200,
+          "height_mm": 200,
+          "dpi": 300,
+          "width_px": 2362,
+          "height_px": 2362
+        },
+        "background": {
+          "type": "solid",
+          "color": "#1a1a2e"
+        },
+        "elements": [
+          {
+            "id": "el_001",
+            "type": "text",
+            "content": "Grand Opening",
+            "style": {
+              "fontFamily": "Noto Sans",
+              "fontSize": 24,
+              "fontWeight": "400",
+              "color": "#000000",
+              "textAlign": "left",
+              "lineHeight": 1.4,
+              "letterSpacing": 0
+            },
+            "position": {
+              "x": 100.0,
+              "y": 50.0
+            },
+            "layer": 0,
+            "locked": false,
+            "visible": true,
+            "group": null
+          },
+          {
+            "id": "el_002",
+            "type": "text",
+            "content": "Join us for the celebration",
+            "style": {
+              "fontFamily": "Noto Sans",
+              "fontSize": 26,
+              "fontWeight": "400",
+              "color": "#000000",
+              "textAlign": "left",
+              "lineHeight": 1.4,
+              "letterSpacing": 0
+            },
+            "position": {
+              "x": 100.0,
+              "y": 110.0
+            },
+            "layer": 1,
+            "locked": false,
+            "visible": true,
+            "group": null
+          },
+          {
+            "id": "el_003",
+            "type": "shape",
+            "content": "",
+            "style": {
+              "fontFamily": "Noto Sans",
+              "fontSize": 24,
+              "fontWeight": "400",
+              "color": "#000000",
+              "textAlign": "left",
+              "lineHeight": 1.4,
+              "letterSpacing": 0
+            },
+            "position": {
+              "x": 0.0,
+              "y": 0.0
+            },
+            "layer": 2,
+            "locked": false,
+            "visible": true,
+            "group": null
+          },
+          {
+            "id": "el_004",
+            "type": "text",
+            "content": "Grand Opening",
+            "style": {
+              "fontSize": 48,
+              "fontWeight": "bold",
+              "color": "#ffd700",
+              "textAlign": "center"
+            },
+            "position": {
+              "x": 148,
+              "y": 50,
+              "width": 200,
+              "height": 60
+            },
+            "layer": 3,
+            "locked": false,
+            "visible": true,
+            "group": null
+          }
+        ],
+        "history": []
+      }
+    }
+  ]
+}

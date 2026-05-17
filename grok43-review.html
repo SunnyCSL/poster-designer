@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Grok 4.3 能力深度評測報告 — Nexi for Sunny</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0d0d1a;--bg2:#151530;--bg3:#1e1e40;--border:#2a2a55;--text:#e0e0f0;--text2:#8888bb;--accent:#7c6cf0;--green:#00d2a0;--red:#ff6b6b;--orange:#ffa94d;--blue:#5c7cfa;--pink:#cc5de8;font-size:16px}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;min-height:100vh;overflow-x:hidden;padding:0}
+.wrap{max-width:640px;margin:0 auto;padding:16px}
+
+h1{font-size:22px;font-weight:800;margin-bottom:2px}
+.sub{font-size:13px;color:var(--text2);margin-bottom:16px}
+.source{font-size:11px;color:var(--text2);margin-bottom:20px;line-height:1.6}
+
+/* Score card header */
+.grok-header{background:linear-gradient(135deg,rgba(204,93,232,.15),rgba(124,108,240,.15));border:1px solid rgba(204,93,232,.25);border-radius:12px;padding:16px;margin-bottom:16px}
+.grok-header h2{font-size:18px;font-weight:800;margin-bottom:4px}
+.grok-header p{font-size:13px;color:var(--text2);line-height:1.6}
+.grok-header .overall{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap}
+.grok-header .overall .stat{background:var(--bg3);border-radius:8px;padding:8px 12px;text-align:center;flex:1;min-width:80px}
+.grok-header .overall .stat .num{font-size:20px;font-weight:800}
+.grok-header .overall .stat .lbl{font-size:10px;color:var(--text2);margin-top:2px}
+
+/* Score cards */
+.scores{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.sc{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px;position:relative}
+.sc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.sc h3{font-size:14px;font-weight:700}
+.sc .s{font-size:20px;font-weight:800}
+.sc .s.A{color:var(--green)}
+.sc .s.B{color:var(--blue)}
+.sc .s.C{color:var(--orange)}
+.sc .s.D{color:var(--red)}
+.sc .bar{height:4px;border-radius:2px;background:var(--bg3);margin-bottom:6px;overflow:hidden}
+.sc .bf{height:100%;border-radius:2px}
+.sc .verdict{font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:6px}
+.sc .evidence{font-size:11px;color:var(--text2);line-height:1.5;padding:6px 8px;background:var(--bg3);border-radius:6px}
+.sc .evidence strong{color:var(--text)}
+.sc .tags{margin-top:6px;display:flex;flex-wrap:wrap;gap:3px}
+.sc .tag{font-size:10px;padding:1px 6px;border-radius:6px;font-weight:600}
+.t-green{background:rgba(0,210,160,.15);color:var(--green)}
+.t-blue{background:rgba(92,124,250,.15);color:var(--blue)}
+.t-orange{background:rgba(255,169,77,.15);color:var(--orange)}
+.t-red{background:rgba(255,107,107,.15);color:var(--red)}
+.t-pink{background:rgba(204,93,232,.15);color:var(--pink)}
+.t-gray{background:rgba(136,136,187,.15);color:var(--text2)}
+
+/* Verdict box */
+.verdict{background:linear-gradient(135deg,rgba(0,210,160,.08),rgba(92,124,250,.08));border:1px solid rgba(0,210,160,.2);border-radius:12px;padding:16px;margin-bottom:16px}
+.verdict h3{font-size:15px;font-weight:700;margin-bottom:8px;color:var(--green)}
+.verdict p{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:4px}
+.verdict .row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.verdict .col{flex:1;min-width:180px;background:var(--bg3);border-radius:8px;padding:10px}
+.verdict .col h4{font-size:12px;font-weight:700;margin-bottom:4px}
+.verdict .col ul{font-size:12px;color:var(--text2);padding-left:14px;line-height:1.7}
+
+/* Context card */
+.ctx{background:var(--bg3);border-radius:10px;padding:12px;margin-bottom:16px}
+.ctx h4{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:6px}
+.ctx p{font-size:12px;color:var(--text2);line-height:1.6}
+
+h3.sec{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);margin-bottom:10px;margin-top:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Grok 4.3 能力深度評測</h1>
+<div class="sub">for Sunny's Daily Workflow · May 2026</div>
+<div class="source">
+Sources: HN discussion (529 comments), Towards AI (18 agent tasks), Mnemosphere (31 tasks), 
+302.AI Benchmark Lab, AIViewer (image gen), Reddit (r/grok, r/AISEOInsider, r/LLMDevs), 
+Artificial Analysis, Microsoft Foundry, Progressive Robot
+</div>
+
+<!-- HEADER -->
+<div class="grok-header">
+  <h2>🤖 Grok 4.3 — xAI's Strategic Pivot</h2>
+  <p>
+    唔係「最強 model」，而係「成本效益最高嘅 digital employee」。<br>
+    $1.25/$2.50 per 1M tokens — 比 GPT-5.5 平 4x，比 Claude Opus 4.7 平 10x。<br>
+    1M context window，最快 ~200+ tok/s。<br>
+    Kimi K2.6 同 DeepSeek V4 Pro 嘅直接競爭對手。
+  </p>
+  <div class="overall">
+    <div class="stat"><div class="num" style="color:var(--blue)">#9</div><div class="lbl">AA Intelligence Index</div></div>
+    <div class="stat"><div class="num" style="color:var(--green)">$1.25</div><div class="lbl">per 1M input</div></div>
+    <div class="stat"><div class="num" style="color:var(--pink)">1M</div><div class="lbl">context tokens</div></div>
+    <div class="stat"><div class="num" style="color:var(--orange)">53</div><div class="lbl">AA Index Score</div></div>
+    <div class="stat"><div class="num" style="color:var(--green)">72%</div><div class="lbl">agent tasks vs Opus</div></div>
+  </div>
+</div>
+
+<!-- CONTEXT: Sunny's Workflow -->
+<div class="ctx">
+  <h4>🎯 Sunny 每日工作 context</h4>
+  <p>
+    系統開發（Hermes agent、cron jobs、Python scripts）· 
+    EV 報告生成（香港電動車資料搜集+填表）·
+    IG 內容創作（粵語 caption、AI 圖片）· 
+    股票/量化交易分析（Alpaca paper trading）· 
+    Poster 設計（Google Slides API + Fabric.js）· 
+    汽車資料研究（specs、價錢、法規）· 
+    每日系統監控（30+ cron jobs）· 
+    粵語互動（每日對話俾指令）
+  </p>
+</div>
+
+<!-- SCORES -->
+<h3 class="sec">📊 逐項能力評分</h3>
+<div class="scores">
+
+<!-- 1: Coding -->
+<div class="sc">
+  <div class="sc-top">
+    <h3>💻 Coding & System Dev</h3>
+    <span class="s B">B</span>
+  </div>
+  <div class="bar"><div class="bf" style="width:72%;background:var(--blue)"></div></div>
+  <div class="verdict"><strong>72/100 — 合格但唔突出</strong></div>
+  <div class="evidence">
+    SWE-Bench Verified ~75%（vs Kimi K2.6 80.2%、GPT-5.5 ~85%）。<br>
+    302.AI: 前端 coding 進步咗，但有啲核心需求會遺漏（missing audio element、冇 pedaling motion）。<br>
+    Mnemosphere 31 tasks: 同 GPT-5.5 打和（React coding tie, Python debugging 輸俾 ChatGPT）。<br>
+    HN: "Not competitive with April frontier releases (GPT 5.5, Opus 4.7) for coding reasoning"<br>
+    <strong>優點：</strong> Unit test 贏 ChatGPT — 強 edge-case coverage
+  </div>
+  <div class="tags">
+    <span class="tag t-blue">Not top-tier</span>
+    <span class="tag t-green">Unit test strong</span>
+    <span class="tag t-orange">Misses core reqs</span>
+    <span class="tag t-gray">vs DeepSeek Flash: better</span>
+  </div>
+</div>
+
+<!-- 2: Reasoning -->
+<div class="sc">
+  <div class="sc-top">
+    <h3>🧠 Hard Reasoning</h3>
+    <span class="s B">B+</span>
+  </div>
+  <div class="bar"><div class="bf" style="width:78%;background:var(--blue)"></div></div>
+  <div class="verdict"><strong>78/100 — Good, not great</strong></div>
+  <div class="evidence">
+    HLE-Full score: ~50%（vs Kimi 54%、DeepSeek Pro ~52%）。<br>
+    Towards AI 18 long-horizon tasks: <strong>Won 13/18 vs Claude Opus 4.7</strong> — agentic reasoning 係強項。<br>
+    302.AI structured spatial reasoning: ✅ 大幅進步（L-shaped trominoes 計啱）。<br>
+    HLE with tools: 同 GPT-5.5 差唔多。<br>
+    <strong>Vending-Bench 2（20M+ tokens coherent decision-making）: 贏 Opus 4.7</strong>
+  </div>
+  <div class="tags">
+    <span class="tag t-green">Agentic reasoning strong</span>
+    <span class="tag t-orange">Human intuition regressed</span>
+    <span class="tag t-blue">Long-horizon tasks 🏆</span>
+  </div>
+</div>
+
+<!-- 3: Tool Calling -->
+<div class="sc">
+  <div class="sc-top">
+    <h3>🔧 Tool Calling & Agentic</h3>
+    <span class="s A-">A-</span>
+  </div>
+  <div class="bar"><div class="bf" style="width:85%;background:var(--green)"></div></div>
+  <div class="verdict"><strong>85/100 — 🏆 最強項</strong></div>
+  <div class="evidence">
+    Microsoft Foundry: "Grok 4.3 is purpose-built for agentic systems"<br>
+    Towards AI: 18 tasks × $7.84 total cost（vs Opus $71.50）= <strong>10x cheaper with better results</strong><br>
+    Native tool: X Search（$5/1K calls）、code execution、file attachments<br>
+    Responses API 原生支援 tool calling + streaming + prompt caching<br>
+    <strong>最啱我哋用：</strong> Hermes 嘅 agent loop + tool calling 係 Grok 嘅 sweet spot
+  </div>
+  <div class="tags">
+    <span class="tag t-green">Purpose-built agentic 🏆</span>
+    <span class="tag t-green">10x cheaper than Opus</span>
+    <span class="tag t-blue">Native X Search</span>
+  </div>
+</div>
+
+<!-- 4: Vision -->
+<div class="sc">
+  <div class="sc-top">
+    <h3>👁️ Vision (Image Analysis)</h3>
+    <span class="s B">B</span>
+  </div>
+  <div class="bar"><div class="bf" style="width:70%;background:var(--blue)"></div></div>
+  <div class="verdict"><strong>70/100 — 基本 ok，唔係最好</strong></div>
+  <div class="evidence">
+    Mnemosphere: ChatGPT 贏 image analysis — "Better evidence-calibrated analysis"<br>
+    Native video input（up to 5min 1080p）— 呢個 ChatGPT/Gemini 冇。<br>
+    HN 用戶: Grok 嘅 voice transcription for non-native accents ~98%（最好之一）<br>
+    <strong>對我哋 EV 報告嚟講：</strong> 睇到車牌/車身圖片，但分析深度不如 GPT-5.5
+  </div>
+  <div class="tags">
+    <span class="tag t-blue">Native video input 🆕</span>
+    <span class="tag t-orange">Analysis not top</span>
+    <span class="tag t-green">Voice transcription 98%</span>
+  </div>
+</div>
+
+<!-- 5: Image Generation -->
+<div class="sc">
+  <div class="sc-top">
+    <h3>🎨 Image Generation</h3>
+    <span class="s C">C+</span>
+  </div>
+  <div class="bar"><div class="bf" style="width:55%;background:var(--orange)"></div></div>
+  <div class="verdict"><strong>55/100 — 勉強用，唔係主力</strong></div>
+  <div class="evidence">
+    AIViewer 12 prompts test: <strong>Grok Imagine 最低分</strong>（vs Midjourney, ChatGPT, Ideogram）<br>
+    "Recognizable as AI-generated — slightly too smooth, lighting not quite right"<br>
+    Max resolution: 1536×1536（vs Midjourney/Idiogram 2048）<br>
+    Text rendering: ❌ "Text is an afterthought"<br>
+    <strong>Speed: 8-12s（最快 🏆）</strong> — generation 最快<br>
+    <strong>對我哋 poster 嚟講：</strong> MiniMax image-01 好好多（$0.0035/張，更高 quality）
+  </div>
+  <div class="tags">
+    <span class="tag t-red">Lowest quality</span>
+    <span class="tag t-green">Fastest gen (8-12s)</span>
+    <span class="tag t-red">No text rendering</span>
+    <span class="tag t-gray">Keep MiniMax for now</span>
+  </div>
+</div>
+
+<!-- 6: Video Generation -->
+<div class="sc">
+  <div class="sc-top">
+    <h3>🎬 Video Generation</h3>
+    <span class="s C">C</span>
+  </div>
+  <div class="bar"><div class="bf" style="width:50%;background:var(--orange)"></div></div>
+  <div class="verdict"><strong>50/100 — 有限制，480p on Lite</strong></div>
+  <div class="evidence">
+    Grok Imagine Video: Text-to-video + image-to-video, up to 7 reference images<br>
+    <strong>Lite plan：Only 480p, 6-second clips</strong><br>
+    Standard plan：Higher quality, ~100 renders/day<br>
+    Pricing via API: $4.20/min generated video<br>
+    vs MiniMax Hailuo 2.3: Hailuo 更高 quality（Sunny 已 confirm Hailuo 好）<br>
+    <strong>對我哋嚟講：</strong> 除非 Standard plan 嘅高 quality，否則不如用 Hailuo
+  </div>
+  <div class="tags">
+    <span class="tag t-orange">480p on Lite</span>
+    <span class="tag t-green">Standard ~100/day</span>
+    <span class="tag t-gray">Hailuo > Grok video</span>
+  </div>
+</div>
+
+<!-- 7: TTS -->
+<div class="sc">
+  <div class="sc-top">
+    <h3>🎤 Text-to-Speech</h3>
+    <span class="s A">A</span>
+  </div>
+  <div class="bar"><div class="bf" style="width:90%;background:var(--green)"></div></div>
+  <div class="verdict"><strong>90/100 — 🏆 極好，接近 ChatGPT voice</strong></div>
+  <div class="evidence">
+    HN: "Grok's voice mode is the only one that isn't routing to a extremely cheap model" — 用 full model<br>
+    "Best voice mode" — 多位 HN 用戶 agree<br>
+    Non-native accent transcription: ~98%（vs ChatGPT 90-95%, Gboard 75%）<br>
+    xAI TTS via OAuth: token reuse from subscription<br>
+    <strong>對我哋嚟講：</strong> 如果有 SuperGrok subscription，TTS 係 bonus（但而家 Edge TTS 已經免費）
+  </div>
+  <div class="tags">
+    <span class="tag t-green">Best voice mode 🏆</span>
+    <span class="tag t-green">98% accent accuracy</span>
+    <span class="tag t-gray">Edge TTS free already</span>
+  </div>
+</div>
+
+<!-- 8: X Search -->
+<div class="sc">
+  <div class="sc-top">
+    <h3>🐦 X / Social Search</h3>
+    <span class="s A+">A+</span>
+  </div>
+  <div class="bar"><div class="bf" style="width:98%;background:var(--green)"></div></div>
+  <div class="verdict"><strong>98/100 — 🏆 獨有 killer feature</strong></div>
+  <div class="evidence">
+    "Grok really shines at capturing the tone and level of 'formality' of a piece of text"<br>
+    Real-time X/Twitter integration: <strong>~3 second response time</strong>（vs ChatGPT web browse ~15s）<br>
+    適合：market sentiment、trending topics、即時新聞分析<br>
+    Mnemosphere: Grok won real-time search — better source discipline<br>
+    <strong>對我哋 trading 嚟講：</strong> 呢個係 xAI 嘅獨有優勢 — 其他 provider 冇
+  </div>
+  <div class="tags">
+    <span class="tag t-green">Unique to xAI 🏆</span>
+    <span class="tag t-green">3s vs 15s response</span>
+    <span class="tag t-pink">Trading value 📈</span>
+  </div>
+</div>
+
+<!-- 9: Cantonese / Chinese -->
+<div class="sc">
+  <div class="sc-top">
+    <h3>🗣️ 粵語 / 中文能力</h3>
+    <span class="s B-">B-</span>
+  </div>
+  <div class="bar"><div class="bf" style="width:65%;background:var(--blue)"></div></div>
+  <div class="verdict"><strong>65/100 — 夠用但不及 Kimi/MiniMax</strong></div>
+  <div class="evidence">
+    Grok 嘅訓練數據 heavily weighted on X/Twitter（英文多）<br>
+    中文 benchmark 排行：唔係特長（Kimi K2.6 明顯更好）<br>
+    Tone matching review：Grok strong on informal/conversational English<br>
+    但係 Cantonese code-switching（中英混合） 唔係 Grok 嘅原生強項<br>
+    Kimi K2.6 原生 160K 中文 vocabulary，訓練數據多中文<br>
+    <strong>對我哋粵語指令嚟講：</strong> 基本 ok，但 Kimi/MiniMax 更自然
+  </div>
+  <div class="tags">
+    <span class="tag t-orange">English-optimized</span>
+    <span class="tag t-blue">Conversational ok</span>
+    <span class="tag t-green">Kimi better for 中文</span>
+  </div>
+</div>
+
+<!-- 10: Long Context -->
+<div class="sc">
+  <div class="sc-top">
+    <h3>📄 Long Context (1M tokens)</h3>
+    <span class="s A-">A-</span>
+  </div>
+  <div class="bar"><div class="bf" style="width:88%;background:var(--green)"></div></div>
+  <div class="verdict"><strong>88/100 — 🏆 並列頂級</strong></div>
+  <div class="evidence">
+    1M context window（同 DeepSeek V4 並列業界最大）<br>
+    Vending-Bench 2（20M+ tokens decision-making）= outperforms Opus 4.7<br>
+    Native document generation: PDF, PowerPoint, spreadsheet output（獨有）<br>
+    <strong>對我哋 EV 報告/長分析嚟講：</strong> excellent — 夠處理成個 1M token 嘅 research
+  </div>
+  <div class="tags">
+    <span class="tag t-green">1M context 🏆</span>
+    <span class="tag t-green">Native doc gen</span>
+    <span class="tag t-blue">Good for EV reports</span>
+  </div>
+</div>
+
+<!-- 11: Speed -->
+<div class="sc">
+  <div class="sc-top">
+    <h3>⚡ Speed / Latency</h3>
+    <span class="s A">A</span>
+  </div>
+  <div class="bar"><div class="bf" style="width:92%;background:var(--green)"></div></div>
+  <div class="verdict"><strong>92/100 — 🏆 業界最快之一</strong></div>
+  <div class="evidence">
+    ~200+ tok/s（artificialanalysis.ai — 2nd fastest）<br>
+    Image generation: 8-12s（fastest）<br>
+    "Responses are far smaller/token dense than other models with comparable performance"<br>
+    <strong>對我哋 system 嚟講：</strong> 快速 response = 更快嘅 tool calling loop
+  </div>
+  <div class="tags">
+    <span class="tag t-green">200+ tok/s 🏆</span>
+    <span class="tag t-green">Token dense</span>
+    <span class="tag t-blue">Fast tool loop</span>
+  </div>
+</div>
+
+<!-- 12: Cost Effectiveness -->
+<div class="sc">
+  <div class="sc-top">
+    <h3>💰 Cost Effectiveness</h3>
+    <span class="s A">A</span>
+  </div>
+  <div class="bar"><div class="bf" style="width:90%;background:var(--green)"></div></div>
+  <div class="verdict"><strong>90/100 — 🏆 定價極具競爭力</strong></div>
+  <div class="evidence">
+    $1.25/$2.50 per 1M — 比 DeepSeek V4 Pro 貴少少但功能多好多<br>
+    SuperGrok Standard $30/month = 包 Grok 4.3 + Imagine + TTS + X Search<br>
+    Batch API 50% off → $0.625/$1.25<br>
+    <strong>成本 vs DeepSeek：</strong> 我哋而家用 ~450 CNY/month（~$62）<br>
+    Standard $30/month 仲平過而家 DeepSeek 用量！
+  </div>
+  <div class="tags">
+    <span class="tag t-green">Cheap vs Capabilities</span>
+    <span class="tag t-green">Batch 50% off</span>
+    <span class="tag t-pink">$30 &lt; $62 (current)</span>
+  </div>
+</div>
+
+<!-- 13: Safety / Bias -->
+<div class="sc">
+  <div class="sc-top">
+    <h3>⚠️ Safety & Bias</h3>
+    <span class="s D">D</span>
+  </div>
+  <div class="bar"><div class="bf" style="width:30%;background:var(--red)"></div></div>
+  <div class="verdict"><strong>30/100 — 最大隱憂</strong></div>
+  <div class="evidence">
+    HN 529 comments 充滿爭議：Musk 直接操控 output、CSAM 生成（歐盟調查中）、"MechaHitler" incident<br>
+    "Holocaust denial content generated" — 法國正在調查<br>
+    23,000+ CSAM images in 11 days（Ars Technica）<br>
+    "If you have a questionable question, Grok will often deliver" — 對某啲用途係優點<br>
+    <strong>對我哋 business 嚟講：</strong> 安全風險低（我哋唔問敏感嘢），但需要考慮 brand risk
+  </div>
+  <div class="tags">
+    <span class="tag t-red">CSAM allegations</span>
+    <span class="tag t-red">Musk manipulation</span>
+    <span class="tag t-orange">"Unfiltered" double-edged</span>
+  </div>
+</div>
+
+</div>
+
+<!-- VERDICT FOR SUNNY -->
+<h3 class="sec">🏆 綜合評估：對我哋系統嘅價值</h3>
+<div class="verdict">
+  <div class="row">
+    <div class="col">
+      <h4 style="color:var(--green)">✅ 我哋用得著嘅強項</h4>
+      <ul>
+        <li>Tool calling + Agentic（佢最強）</li>
+        <li>X Search（獨有，trading 用）</li>
+        <li>Speed（200+ tok/s）</li>
+        <li>1M context（長分析）</li>
+        <li>Cost（$30 < 而家 $62）</li>
+        <li>Voice mode（好過 Edge）</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h4 style="color:var(--orange)">⚠️ 唔建議取代嘅嘢</h4>
+      <ul>
+        <li>Coding（Kimi K2.6 更好）</li>
+        <li>中文/Kimi MiniMax 更好）</li>
+        <li>Image gen（MiniMax 更好）</li>
+        <li>Video gen（Hailuo 更好）</li>
+        <li>Vision 分析（GPT-5.5 更好）</li>
+      </ul>
+    </div>
+    <div class="col">
+      <h4 style="color:var(--red)">❌ 需留意嘅風險</h4>
+      <ul>
+        <li>Safety/bias 爭議</li>
+        <li>Lite plan 限制多</li>
+        <li>OAuth setup 需手動</li>
+        <li>冇 API access on Lite</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:12px">
+    <strong>總評：Grok 4.3 唔係全面勝過所有 model，但係一個極好嘅 all-in-one complement。</strong><br>
+    Best use：做 system 主力（tool calling + X Search + speed）+ MiniMax 做 image/video + Kimi 做 coding
+  </p>
+</div>
+
+<!-- RECOMMENDATION -->
+<h3 class="sec">🎯 最終建議</h3>
+<div class="verdict" style="border-color:var(--accent);background:linear-gradient(135deg,rgba(124,108,240,.08),rgba(204,93,232,.08))">
+  <h3 style="color:var(--accent)">用 Standard $30 取代 DeepSeek 做主力</h3>
+  <p>
+    <strong>比起而家每月 ~$62 DeepSeek 用量，Standard $30 仲平 $32</strong>，而且多咗 X Search、TTS、1M context 同 tool calling 嘅原生優勢。<br><br>
+    <strong>保留 MiniMax M2.7 做 auxiliary + image gen</strong>（Token Plan 已預付，唔好浪費）<br>
+    <strong>保留 Kimi K2.6 做 coding fallback</strong>（Kimi coding 最強）<br><br>
+    <strong>Lite $10 唔夠我哋用</strong> — rate limits 太 tight、480p image/video 冇用、冇 DeepSearch<br><br>
+    🚀 <strong>準備好試 Standard 未？</strong> 3日免費，我 setup 晒 auto-revert 72h，唔啱就自動返 DeepSeek
+  </p>
+</div>
+
+</div>
+</body>
+</html>

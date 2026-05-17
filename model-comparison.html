@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Model Comparison · Nexi</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0d1a;--bg2:#151530;--bg3:#1e1e40;--border:#2a2a55;
+  --text:#e0e0f0;--text2:#8888bb;--a:#5c7cfa;--a2:#00d2a0;--a3:#ffa94d;--a4:#cc5de8;
+  font-size:16px;
+}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;padding:0;min-height:100vh;overflow-x:hidden}
+.wrap{max-width:640px;margin:0 auto;padding:16px}
+
+/* header */
+h1{font-size:22px;font-weight:800;margin-bottom:2px}
+.sub{font-size:13px;color:var(--text2);margin-bottom:16px}
+
+/* price cards — single col on mobile */
+.cards{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.c1::before{background:linear-gradient(90deg,var(--a),#7c6cf0)}
+.c2::before{background:linear-gradient(90deg,var(--a2),#20bf6b)}
+.c3::before{background:linear-gradient(90deg,var(--a3),var(--text))}
+.c4::before{background:linear-gradient(90deg,var(--a4),var(--a))}
+.card-row{display:flex;justify-content:space-between;align-items:flex-start}
+.card h2{font-size:16px;font-weight:700}
+.card .variant{font-size:11px;color:var(--text2)}
+.right-side{text-align:right;flex-shrink:0}
+.price{font-size:20px;font-weight:800}
+.price-sub{font-size:11px;color:var(--text2)}
+.cache{font-size:11px;margin-top:2px}
+.tags{margin-top:8px;display:flex;flex-wrap:wrap;gap:4px}
+.tag{font-size:11px;padding:2px 8px;border-radius:8px;font-weight:600}
+.t-blue{background:rgba(92,124,250,.15);color:var(--a)}
+.t-green{background:rgba(0,210,160,.15);color:var(--a2)}
+.t-orange{background:rgba(255,169,77,.15);color:var(--a3)}
+.t-pink{background:rgba(204,93,232,.15);color:var(--a4)}
+.t-gray{background:rgba(136,136,187,.15);color:var(--text2)}
+.pro-note{font-size:11px;color:var(--text2);margin-top:6px;padding-top:6px;border-top:1px solid var(--border)}
+.pro-note strong{color:var(--a3)}
+
+/* section headers */
+h3{font-size:13px;font-weight:700;letter-spacing:.5px;color:var(--text2);margin-bottom:10px;text-transform:uppercase}
+
+/* comparison table — scroll on mobile */
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:20px;border-radius:10px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;background:var(--bg2);font-size:13px;min-width:400px}
+th{padding:10px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--text2);background:var(--bg3);white-space:nowrap;border-bottom:1px solid var(--border)}
+th:first-child{padding-left:14px;position:sticky;left:0;z-index:1}
+td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+td:first-child{color:var(--text2);font-weight:500;white-space:nowrap;padding-left:14px;background:var(--bg2);border-right:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+.table-scroll table td .tag{font-size:10px;padding:1px 6px}
+.table-scroll table td strong{color:var(--text)}
+.nowrap{white-space:nowrap}
+
+/* bar ratings */
+.bar{display:inline-flex;align-items:center;gap:5px;width:100%;max-width:120px}
+.btr{flex:1;height:5px;border-radius:3px;background:var(--bg3)}
+.bf{height:100%;border-radius:3px}
+.bl{font-size:11px;font-weight:600;min-width:30px;text-align:right}
+
+/* verdict */
+.v{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.vi{background:var(--bg3);border-radius:10px;padding:12px 14px;border-left:3px solid var(--a)}
+.vi h4{font-size:13px;font-weight:700;margin-bottom:4px}
+.vi p{font-size:13px;color:var(--text2);line-height:1.5}
+
+/* strengths table — no scroll needed for 3 col */
+.st-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:20px;border-radius:10px;border:1px solid var(--border)}
+.st-wrap table{min-width:360px}
+
+/* cta */
+.cta{background:linear-gradient(135deg,rgba(124,108,240,.08),rgba(204,93,232,.08));border:1px solid rgba(124,108,240,.25);border-radius:12px;padding:16px;margin-top:8px}
+.cta h3{font-size:15px;color:var(--text);text-transform:none;letter-spacing:0;margin-bottom:6px}
+.cta p{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:4px}
+.cta code{background:var(--bg3);padding:1px 5px;border-radius:4px;font-size:12px;color:#a29bfe}
+.steps{font-size:13px;line-height:1.8}
+/* mobile-friendly small edits */
+@media(max-width:400px){
+  .wrap{padding:12px}
+  h1{font-size:18px}
+  table{font-size:12px;min-width:320px}
+  td,th{padding:6px 8px}
+  td:first-child{padding-left:8px}
+  .price{font-size:17px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Model Capability Comparison</h1>
+<div class="sub">Kimi K2.6 · MiniMax M2.7 · DeepSeek V4 Flash/Pro · Grok 4.3 · May 2026</div>
+
+<!-- CARDS -->
+<div class="cards">
+
+<div class="card c1">
+  <div class="card-row">
+    <div><h2>Kimi K2.6</h2><div class="variant">Moonshot AI · 262K ctx</div></div>
+    <div class="right-side">
+      <div class="price">$0.95 / $4.00</div>
+      <div class="price-sub">input / output (per 1M)</div>
+      <div class="cache" style="color:var(--a2)">🧠 Cached: $0.15/M</div>
+    </div>
+  </div>
+  <div class="tags">
+    <span class="tag t-blue">Coding #1</span>
+    <span class="tag t-blue">Agentic 300</span>
+    <span class="tag t-green">Open-source</span>
+    <span class="tag t-orange">1T params</span>
+  </div>
+</div>
+
+<div class="card c2">
+  <div class="card-row">
+    <div><h2>MiniMax M2.7</h2><div class="variant">MiniMax · 205K ctx</div></div>
+    <div class="right-side">
+      <div class="price">$0.30 / $1.20</div>
+      <div class="price-sub">input / output (per 1M)</div>
+      <div class="cache" style="color:var(--a2)">⚡ Cached: $0.06/M</div>
+    </div>
+  </div>
+  <div class="tags">
+    <span class="tag t-green">Cheapest</span>
+    <span class="tag t-green">Fast ~60tps</span>
+    <span class="tag t-gray">205K ctx</span>
+    <span class="tag t-pink">Img+Video+Music</span>
+  </div>
+</div>
+
+<div class="card c3">
+  <div class="card-row">
+    <div><h2>DeepSeek V4 Flash</h2><div class="variant">1M ctx · max 384K out</div></div>
+    <div class="right-side">
+      <div class="price">$0.14 / $0.28</div>
+      <div class="price-sub">input / output (per 1M)</div>
+      <div class="cache" style="color:var(--a3)">🔥 Cache hit: $0.0028/M</div>
+    </div>
+  </div>
+  <div class="pro-note">V4 Pro: <strong>$1.74/$3.48</strong> <span style="color:var(--a2)">(75% off → $0.435/$0.87 until May 31)</span></div>
+  <div class="tags">
+    <span class="tag t-green">Extreme value</span>
+    <span class="tag t-blue">1M ctx 🏆</span>
+    <span class="tag t-green">Open-source</span>
+  </div>
+</div>
+
+<div class="card c4">
+  <div class="card-row">
+    <div><h2>Grok 4.3</h2><div class="variant">xAI · 1M ctx</div></div>
+    <div class="right-side">
+      <div class="price">$1.25 / $2.50</div>
+      <div class="price-sub">input / output (per 1M)</div>
+      <div class="cache" style="color:var(--a4)">🎯 Lite: <strong>$10/mo</strong></div>
+    </div>
+  </div>
+  <div class="tags">
+    <span class="tag t-pink">Multimodal</span>
+    <span class="tag t-pink">Img+Video+Audio</span>
+    <span class="tag t-blue">X Search</span>
+  </div>
+</div>
+</div>
+
+<!-- CAPABILITIES -->
+<h3>🧩 Core Capabilities</h3>
+<div class="table-scroll">
+<table>
+<thead><tr><th>Feature</th><th>Kimi K2.6</th><th>MiniMax M2.7</th><th>DS V4 Flash</th><th>Grok 4.3</th></tr></thead>
+<tbody>
+<tr><td>Context</td><td>262K</td><td>205K</td><td><strong>1,000K 🏆</strong></td><td><strong>1,000K 🏆</strong></td></tr>
+<tr><td>Max Output</td><td>~32K</td><td>~8K</td><td><strong>384K 🏆</strong></td><td>~32K</td></tr>
+<tr><td>Thinking</td><td>✅ Default</td><td>✅ Blocks</td><td>✅ Default</td><td>✅ Variant</td></tr>
+<tr><td>Tool Calling</td><td>✅ Native</td><td>✅ Native</td><td>✅ Native</td><td>✅ Resp API</td></tr>
+<tr><td>Vision</td><td>✅ <span class="tag t-green">Native</span></td><td>⚠️ mmx CLI</td><td>❌ Text-only</td><td>✅ <span class="tag t-green">Native</span></td></tr>
+<tr><td>JSON Output</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Prompt Caching</td><td>✅ $0.15/M</td><td>✅ <strong>$0.06/M</strong></td><td>✅ <strong>$0.0028/M</strong></td><td>✅ Auto</td></tr>
+<tr><td>Image Gen</td><td>❌</td><td>✅ img-01 ($0.0035)</td><td>❌</td><td>✅ Imagine ($0.02)</td></tr>
+<tr><td>Video Gen</td><td>❌</td><td>✅ Hailuo 2.3</td><td>❌</td><td>✅ Img Video</td></tr>
+<tr><td>TTS</td><td>❌</td><td>✅ speech-02-hd</td><td>❌</td><td>✅ xAI TTS</td></tr>
+<tr><td>Music Gen</td><td>❌</td><td>✅ music-2.6</td><td>❌</td><td>❌</td></tr>
+<tr><td>X Search</td><td>❌</td><td>❌</td><td>❌</td><td>✅ Built-in</td></tr>
+<tr><td>Open-source</td><td>✅ MIT-like</td><td>❌ Proprietary</td><td>✅ MIT</td><td>❌ Proprietary</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- BENCHMARKS -->
+<h3>📊 Benchmarks</h3>
+<div class="table-scroll">
+<table>
+<thead><tr><th>Benchmark</th><th>Kimi K2.6</th><th>MM M2.7</th><th>DS V4 Flash</th><th>Grok 4.3</th></tr></thead>
+<tbody>
+<tr><td>SWE-Bench Verified</td><td><strong>80.2% 🏆</strong></td><td>~55%</td><td>~60%</td><td>~65%</td></tr>
+<tr><td>HLE-Full (tools)</td><td><strong>54.0% 🏆</strong></td><td>~30%</td><td>~40%</td><td>~50%</td></tr>
+<tr><td>AIME 2026</td><td><strong>96.4% 🏆</strong></td><td>~60%</td><td>~78%</td><td>~92%</td></tr>
+<tr><td>GPQA Diamond</td><td><strong>90.5%</strong></td><td>~50%</td><td>~65%</td><td><strong>~91%</strong></td></tr>
+<tr><td>LiveCodeBench v6</td><td><strong>89.6% 🏆</strong></td><td>~40%</td><td>~65%</td><td>~75%</td></tr>
+<tr><td>Speed (t/s)</td><td>16-157</td><td><strong>~60 ⚡</strong></td><td><strong>~60 ⚡</strong></td><td>~40</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- USE CASE RATINGS -->
+<h3>🎯 Use Case Ratings</h3>
+<div class="table-scroll">
+<table>
+<thead><tr><th>Use Case</th><th>Kimi K2.6</th><th>MiniMax M2.7</th><th>DS V4 Flash</th><th>Grok 4.3</th></tr></thead>
+<tbody>
+<tr><td>Coding</td><td><div class="bar"><div class="btr"><div class="bf" style="width:95%;background:var(--a)"></div></div><span class="bl">95%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:45%;background:var(--a2)"></div></div><span class="bl">45%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:65%;background:var(--a3)"></div></div><span class="bl">65%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:70%;background:var(--a4)"></div></div><span class="bl">70%</span></div></td></tr>
+<tr><td>Reasoning</td><td><div class="bar"><div class="btr"><div class="bf" style="width:95%;background:var(--a)"></div></div><span class="bl">95%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:40%;background:var(--a2)"></div></div><span class="bl">40%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:70%;background:var(--a3)"></div></div><span class="bl">70%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:92%;background:var(--a4)"></div></div><span class="bl">92%</span></div></td></tr>
+<tr><td>Cost Eff.</td><td><div class="bar"><div class="btr"><div class="bf" style="width:25%;background:var(--a)"></div></div><span class="bl">25%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:90%;background:var(--a2)"></div></div><span class="bl">90%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:98%;background:var(--a3)"></div></div><span class="bl">98%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:60%;background:var(--a4)"></div></div><span class="bl">60%</span></div></td></tr>
+<tr><td>Long Ctx</td><td><div class="bar"><div class="btr"><div class="bf" style="width:26%;background:var(--a)"></div></div><span class="bl">26%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:20%;background:var(--a2)"></div></div><span class="bl">20%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:100%;background:var(--a3)"></div></div><span class="bl">100%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:100%;background:var(--a4)"></div></div><span class="bl">100%</span></div></td></tr>
+<tr><td>Img/Video</td><td><div class="bar"><div class="btr"><div class="bf" style="width:0%;background:var(--a)"></div></div><span class="bl">0%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:85%;background:var(--a2)"></div></div><span class="bl">85%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:0%;background:var(--a3)"></div></div><span class="bl">0%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:70%;background:var(--a4)"></div></div><span class="bl">70%</span></div></td></tr>
+<tr><td>Speed</td><td><div class="bar"><div class="btr"><div class="bf" style="width:50%;background:var(--a)"></div></div><span class="bl">50%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:80%;background:var(--a2)"></div></div><span class="bl">80%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:80%;background:var(--a3)"></div></div><span class="bl">80%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:55%;background:var(--a4)"></div></div><span class="bl">55%</span></div></td></tr>
+<tr><td>Multimodal</td><td><div class="bar"><div class="btr"><div class="bf" style="width:60%;background:var(--a)"></div></div><span class="bl">60%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:50%;background:var(--a2)"></div></div><span class="bl">50%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:10%;background:var(--a3)"></div></div><span class="bl">10%</span></div></td><td><div class="bar"><div class="btr"><div class="bf" style="width:95%;background:var(--a4)"></div></div><span class="bl">95%</span></div></td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- STRENGTHS -->
+<h3>⚖️ Strengths & Weaknesses</h3>
+<div class="st-wrap">
+<table>
+<thead><tr><th>Model</th><th>✅ Strengths</th><th>❌ Weaknesses</th></tr></thead>
+<tbody>
+<tr><td><strong>Kimi K2.6</strong></td>
+<td>Coding #1 (SWE-Bench 80.2%), Agentic 300, AIME 96.4%, Native vision, Open-source</td>
+<td>$4/M output, 1T params (slow), Temp locked at 1.0, Provider fragmentation</td></tr>
+<tr><td><strong>MiniMax M2.7</strong></td>
+<td>Cheap $0.30/$1.20, Fast ~60tps, Reliable daily, Img+Video+Music+TTS</td>
+<td>No native vision, 205K ctx, Proprietary, Mid benchmarks, ~8K max out</td></tr>
+<tr><td><strong>DS V4 Flash</strong></td>
+<td>$0.14/$0.28 (extreme value), 1M ctx 🏆, 384K output 🏆, Open MIT, Fast</td>
+<td>No vision, No image/video, Pro high without 75% off, 1M ctx can be slow</td></tr>
+<tr><td><strong>Grok 4.3</strong></td>
+<td>Multimodal all-in-one, 1M ctx, Built-in X Search + Imagine, $10/mo Lite</td>
+<td>Proprietary, Limits on Lite (480p video), Tools cost $5/1K calls</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- VERDICT -->
+<h3>🏆 Verdict</h3>
+<div class="v">
+<div class="vi" style="border-left-color:var(--a)">
+<h4 style="color:var(--a)">Kimi K2.6 — Best Coding & Reasoning</h4>
+<p>SWE-Bench #1, AIME 96.4%, 300 agent swarm. The go-to for complex code and hard problems. Downside: expensive ($4/M out).</p>
+</div>
+<div class="vi" style="border-left-color:var(--a2)">
+<h4 style="color:var(--a2)">MiniMax M2.7 — Best Daily Driver</h4>
+<p>Cheap ($0.30/$1.20), fast (60 tps), reliable. Handles 80% of daily work. Plus: image/video/music/TTS in one platform.</p>
+</div>
+<div class="vi" style="border-left-color:var(--a3)">
+<h4 style="color:var(--a3)">DS V4 Flash — Best Value + Long Context</h4>
+<p>$0.14/$0.28, 1M context, 384K output. Unbeatable for token-heavy tasks. Cache hit $0.0028 ≈ free. No vision/multimodal.</p>
+</div>
+<div class="vi" style="border-left-color:var(--a4)">
+<h4 style="color:var(--a4)">Grok 4.3 — Only True All-in-One</h4>
+<p>Chat + vision + image gen + video gen + TTS + X Search — everything in one subscription. $10/mo Lite affordable.</p>
+</div>
+</div>
+
+<!-- CTA -->
+<div class="cta">
+<h3>🎯 SuperGrok Lite $10/mo + 我哋系統</h3>
+<p><strong>可以完美使用。</strong> Hermes v0.14.0 <code>xai-oauth</code> provider 已經支援。一個 subscription 包晒 Grok 4.3 + Image + Video + TTS + X Search。</p>
+<div class="steps">
+✅ 你 subscribe SuperGrok Lite<br>
+✅ SSH port forward: <code>ssh -N -L 56121:127.0.0.1:56121 ...</code><br>
+✅ <code>hermes auth add xai-oauth --no-browser</code><br>
+✅ Mac browser approve → done 🎉
+</div>
+</div>
+
+</div>
+</body>
+</html>

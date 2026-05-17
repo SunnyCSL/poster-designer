@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SuperGrok Lite vs Standard · Nexi</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0d0d1a;--bg2:#151530;--bg3:#1e1e40;--border:#2a2a55;--text:#e0e0f0;--text2:#8888bb;--accent:#7c6cf0;--green:#00d2a0;--red:#ff6b6b;--orange:#ffa94d;--blue:#5c7cfa;--pink:#cc5de8;font-size:16px}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,system-ui,sans-serif;min-height:100vh;overflow-x:hidden;padding:0}
+.wrap{max-width:640px;margin:0 auto;padding:16px}
+
+/* Header */
+h1{font-size:22px;font-weight:800;margin-bottom:2px}
+.sub{font-size:13px;color:var(--text2);margin-bottom:16px}
+
+/* Hero cards side by side */
+.hero{display:flex;gap:10px;margin-bottom:20px}
+.hero-c{flex:1;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;position:relative;overflow:hidden}
+.hero-c::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.lite::before{background:var(--blue)}
+.std::before{background:var(--accent)}
+.hero-c .p{font-size:28px;font-weight:800;margin:2px 0}
+.hero-c .mo{font-size:12px;color:var(--text2)}
+.hero-c .tagline{font-size:12px;margin-top:6px;color:var(--text2)}
+
+/* Feature table */
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:20px;border-radius:10px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;background:var(--bg2);font-size:13px;min-width:360px}
+th{padding:10px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--text2);background:var(--bg3);white-space:nowrap;border-bottom:1px solid var(--border)}
+th:first-child{padding-left:14px}
+td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+td:first-child{color:var(--text2);font-weight:500;white-space:nowrap;padding-left:14px;background:var(--bg2);border-right:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+.tag{font-size:10px;padding:1px 6px;border-radius:6px;font-weight:600;white-space:nowrap;margin:0 2px}
+.t-g{background:rgba(0,210,160,.15);color:var(--green)}
+.t-r{background:rgba(255,107,107,.15);color:var(--red)}
+.t-o{background:rgba(255,169,77,.15);color:var(--orange)}
+.t-b{background:rgba(92,124,250,.15);color:var(--blue)}
+.t-p{background:rgba(204,93,232,.15);color:var(--pink)}
+
+h3{font-size:13px;font-weight:700;letter-spacing:.5px;color:var(--text2);margin-bottom:10px;text-transform:uppercase;margin-top:24px}
+
+/* Analysis cards */
+.cards{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px}
+.card h4{font-size:14px;font-weight:700;margin-bottom:4px}
+.card p{font-size:13px;color:var(--text2);line-height:1.6}
+
+/* Verdict box */
+.verdict{background:linear-gradient(135deg,rgba(124,108,240,.08),rgba(204,93,232,.08));border:1px solid rgba(124,108,240,.25);border-radius:12px;padding:16px;margin:20px 0}
+.verdict h3{color:var(--text);text-transform:none;letter-spacing:0;font-size:15px;margin-top:0}
+.verdict p{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:4px}
+.verdict .opt{background:var(--bg3);border-radius:8px;padding:10px 12px;margin:8px 0;border-left:3px solid var(--blue)}
+.verdict .opt h4{font-size:13px;font-weight:700}
+.verdict .opt p{font-size:12px;color:var(--text2)}
+
+/* Bar */
+.bar{display:inline-flex;align-items:center;gap:5px;width:100%}
+.btr{flex:1;height:5px;border-radius:3px;background:var(--bg3);max-width:80px}
+.bf{height:100%;border-radius:3px}
+.bl{font-size:11px;font-weight:600;min-width:30px;text-align:right}
+
+/* Section highlight */
+.highlight{background:var(--bg3);border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.highlight h4{font-size:13px;font-weight:700;margin-bottom:4px}
+.highlight p{font-size:13px;color:var(--text2);line-height:1.5}
+
+@media(max-width:420px){
+  .hero{flex-direction:column}
+  .wrap{padding:12px}
+  h1{font-size:18px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>SuperGrok Lite vs Standard</h1>
+<div class="sub">$10/month vs $30/month · 我哋系統可行性分析 · May 2026</div>
+
+<!-- Hero cards -->
+<div class="hero">
+  <div class="hero-c lite">
+    <h2>SuperGrok Lite</h2>
+    <div class="p">$10</div>
+    <div class="mo">/ month</div>
+    <div class="tagline">Entry-level · 試水 · Basic Grok 4</div>
+    <div style="margin-top:8px">
+      <span class="tag t-b">Grok 4 basic</span>
+      <span class="tag t-b">480p video</span>
+      <span class="tag t-o">Tight limits</span>
+    </div>
+  </div>
+  <div class="hero-c std">
+    <h2>SuperGrok</h2>
+    <div class="p">$30</div>
+    <div class="mo">/ month</div>
+    <div class="tagline">Full experience · Grok 4.3 · DeepSearch</div>
+    <div style="margin-top:8px">
+      <span class="tag t-p">Grok 4.3</span>
+      <span class="tag t-p">DeepSearch</span>
+      <span class="tag t-g">High limits</span>
+    </div>
+  </div>
+</div>
+
+<!-- Feature comparison -->
+<h3>📋 Feature Comparison</h3>
+<div class="tscroll">
+<table>
+<thead><tr><th>Feature</th><th>Lite $10</th><th>Standard $30</th></tr></thead>
+<tbody>
+<tr><td>Model Access</td><td>Grok 4 <span class="tag t-b">basic</span></td><td><strong>Grok 4.3</strong> rolling out<span class="tag t-g">✅</span></td></tr>
+<tr><td>Context Window</td><td>Limited</td><td><strong>128K tokens</strong></td></tr>
+<tr><td>DeepSearch</td><td><span class="tag t-r">❌ Not available</span></td><td><span class="tag t-g">✅ Full access</span></td></tr>
+<tr><td>Big Brain Mode</td><td><span class="tag t-r">❌</span></td><td><span class="tag t-g">✅</span></td></tr>
+<tr><td>Voice Mode</td><td><span class="tag t-r">❌</span></td><td><span class="tag t-g">✅</span></td></tr>
+<tr><td>Rate Limits</td><td>Tight<br><span style="font-size:11px;color:var(--text2)">~10-20 prompts/2hrs</span></td><td><strong>High</strong><br><span style="font-size:11px;color:var(--text2)">~100 prompts/2hrs</span></td></tr>
+<tr><td>Image Gen</td><td>Limited, <span class="tag t-o">480p</span></td><td><span class="tag t-g">Unlimited</span></td></tr>
+<tr><td>Video Gen</td><td><strong>6s</strong> clips, 480p</td><td><strong>~100</strong> renders/day</td></tr>
+<tr><td>AI Agents</td><td>1 agent</td><td>Multiple agents</td></tr>
+<tr><td>Chat Length</td><td>2x free tier</td><td>Highest</td></tr>
+<tr><td>Batch API</td><td>50% off <span class="tag t-o">(needs API $)</span></td><td>50% off <span class="tag t-g">(needs API $)</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- Our system analysis -->
+<h3>🤖 我哋系統使用可行性</h3>
+
+<div class="highlight" style="border-left:3px solid var(--red)">
+<h4 style="color:var(--red)">Lite $10 — ❌ 唔建議做 Main Model</h4>
+<p>
+Rate limits 太 tight — 我一日十幾個 sessions，每個 session 幾十個 tool calls，好快 hit 429。<br>
+Grok 4 basic 唔係 4.3，用唔到 DeepSearch / Big Brain / Voice。480p image 對我哋 poster work 冇用。<br>
+<strong>最佳用法：</strong>只係試水，或者用嚟做 X Search 同 TTS（呢兩個功能獨立運作）
+</p>
+</div>
+
+<div class="highlight" style="border-left:3px solid var(--green)">
+<h4 style="color:var(--green)">Standard $30 — ✅ 可以做 Main Model（但要考慮成本）</h4>
+<p>
+Grok 4.3 + DeepSearch + high rate limits — 足以取代 DeepSeek 做 system default model。<br>
+但係 $30/month + 我哋而家 DeepSeek/MiniMax 成本 ($0-5) = 貴咗 $25-30/月<br>
+<strong>最好用法：</strong>用 Standard 嘅 DeepSearch + X Search 做輔助，唔 replace 而家嘅 models
+</p>
+</div>
+
+<!-- Cost analysis -->
+<h3>💰 Cost Scenarios</h3>
+<div class="cards">
+  <div class="card">
+    <h4 style="color:var(--blue)">Scenario A — 而家 Keep 不變</h4>
+    <p>
+    DeepSeek V4 Flash（main）+ MiniMax M2.7（auxiliary）+ Kimi K2.6（coding）<br>
+    <strong>成本：~$0-5/month</strong><br>
+    好處：已經運作順暢，所有功能齊全<br>
+    缺點：冇 xAI 嘅 DeepSearch
+    </p>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--orange)">Scenario B — Lite + 而家嘅 setup</h4>
+    <p>
+    $10/month 加 xAI access，用嚟做 X Search + TTS<br>
+    Main model 繼續 DeepSeek / MiniMax<br>
+    <strong>成本：~$10-15/month</strong><br>
+    <strong>推薦：</strong>試一個月，睇下 xAI 生態值唔值得 upgrade
+    </p>
+  </div>
+  <div class="card">
+    <h4 style="color:var(--pink)">Scenario C — Standard + 而家嘅 setup</h4>
+    <p>
+    $30/month 加 Grok 4.3 + DeepSearch<br>
+    Main model 可能轉 Grok 4.3，DeepSeek 做 fallback<br>
+    <strong>成本：~$30-35/month</strong><br>
+    <strong>推薦：</strong>如果你發現 DeepSearch 真係好有用
+    </p>
+  </div>
+</div>
+
+<!-- Verdict -->
+<div class="verdict">
+<h3>🏆 我嘅建議</h3>
+<p><strong>短期：</strong>如果純粹想試 xAI 生態 → <strong>Lite $10 試一個月</strong></p>
+<p>用嚟玩下 X Search、TTS、睇下 Grok 嘅 reasoning 掂唔掂。唔 replace 而家 models。</p>
+<p>之後覺得有用可以 upgrade 上 Standard。</p>
+<p style="margin-top:8px"><strong>長期：</strong>如果真係想用 xAI 做主力 → <strong>Standard $30</strong></p>
+<p>Grok 4.3 + DeepSearch 先係真正嘅 value。Lite 限制太多，我哋 automation 系統會成日撞牆。</p>
+</div>
+
+</div>
+</body>
+</html>
